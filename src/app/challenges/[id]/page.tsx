@@ -7,6 +7,14 @@ import { Container } from "@/components/ui/container";
 import { getUserContext } from "@/lib/auth/dal";
 import { formatDate } from "@/lib/utils";
 import { getPublishedChallenge } from "@/services/challenges";
+import { demoChallenges } from "@/data/demo-challenges";
+import { isSupabaseConfigured } from "@/lib/env";
+
+// 静的書き出し（GitHub Pages）時は SAMPLE データの詳細ページだけを生成する。
+export async function generateStaticParams() {
+  if (isSupabaseConfigured()) return [];
+  return demoChallenges.map((challenge) => ({ id: challenge.id }));
+}
 
 type Props = { params: Promise<{ id: string }> };
 
