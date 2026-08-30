@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f7f3;
+  --foreground: #1e2a2e;
+  --surface: #ffffff;
+  --muted: #667276;
+  --line: #dfe4e2;
+  --owner: #e96b2c;
+  --owner-soft: #fff0e5;
+  --student: #2563eb;
+  --student-soft: #eaf1ff;
+  --admin: #253238;
+  --mint: #dceee5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-owner: var(--owner);
+  --color-owner-soft: var(--owner-soft);
+  --color-student: var(--student);
+  --color-student-soft: var(--student-soft);
+  --color-admin: var(--admin);
+  --color-mint: var(--mint);
+  --font-sans: "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui,
+    sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+::selection { background: #ffd8bd; color: #4a2411; }
+a, button, input, select, textarea { outline-offset: 3px; }
+:focus-visible { outline: 3px solid #4f83ee; }
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: #fff;
+  padding: 0.8rem 0.9rem;
+  color: var(--foreground);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #7095e6;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
+}
+input[type="checkbox"] { width: auto; accent-color: var(--student); }
+textarea { min-height: 8rem; resize: vertical; }
+label { color: #344348; font-size: 0.9rem; font-weight: 700; }
+.paper-grid {
+  background-image: linear-gradient(rgb(30 42 46 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(30 42 46 / 4%) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.balance { text-wrap: balance; }
