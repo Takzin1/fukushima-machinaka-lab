@@ -50,6 +50,24 @@ flowchart TD
 - `src/services`: 読み取り用DAL。画面へ必要なDTOだけ返す
 - `supabase/migrations`: schema、index、trigger、GRANT、RLSの再現可能な定義
 
+## GitHub Pages（静的プレビュー）
+
+`main` に push すると `.github/workflows/deploy-pages.yml` が `https://<user>.github.io/<repo>/` へ静的サイトを公開します。
+初回のみ GitHub の **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に変更してください。
+
+GitHub Pages はサーバーを持たないため、公開されるのは **SAMPLE データのプレビュー** です。
+
+- 動くもの: Landing、LAB説明、Challenge一覧・詳細、プライバシー、利用規約
+- 動かないもの: 登録／ログイン、WISH相談、応募、管理画面（フォーム送信時に案内を表示）
+
+本番のWebApp（Supabase接続あり）は Vercel などのサーバー実行環境へデプロイしてください。
+
+```bash
+GITHUB_PAGES_BASE_PATH=/fukushima-machinaka-lab npm run build:pages   # out/ に静的ファイルを生成
+```
+
+仕組み: `scripts/build-github-pages.mjs` が静的書き出しと両立しないファイル（`src/proxy.ts`、`auth/callback`、認証必須の動的ページ）を一時退避し、`next.config.ts` の `GITHUB_PAGES=true` 分岐で `output: "export"` と `basePath` を有効化、Server Actions を `src/actions-static/` のダミーへ差し替えてビルドします。
+
 ## Local Setup
 
 ```bash
