@@ -7,7 +7,13 @@ const sessionCookieName = "__session";
 const expiresIn = 5 * 24 * 60 * 60 * 1000;
 
 export async function createFirebaseSession(idToken: string) {
-  const sessionCookie = await getFirebaseAdminAuth().createSessionCookie(idToken, {
+  const auth = getFirebaseAdminAuth();
+  const token = await auth.verifyIdToken(idToken, true);
+  if (token.email_verified !== true) {
+    throw new Error("EMAIL_NOT_VERIFIED");
+  }
+
+  const sessionCookie = await auth.createSessionCookie(idToken, {
     expiresIn,
   });
   const store = await cookies();
