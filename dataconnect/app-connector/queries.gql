@@ -77,6 +77,13 @@ query GetCurrentProfile @auth(level: USER_EMAIL_VERIFIED) {
   }
 }
 
+query HealthCheck
+  @auth(level: PUBLIC, insecureReason: "Returns at most one published Challenge identifier to verify service readiness; no private fields are selected.") {
+  challenges(where: { status: { eq: "published" } }, limit: 1) {
+    id
+  }
+}
+
 query ListPublishedChallenges
   @auth(level: PUBLIC, insecureReason: "Only explicitly published Challenge fields are selected; private WISH and application data are excluded.") {
   challenges(

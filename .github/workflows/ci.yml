@@ -16,10 +16,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - name: Compile Data Connect schema offline
+        shell: bash
+        run: |
+          mv .firebaserc .firebaserc.ci
+          trap 'mv .firebaserc.ci .firebaserc' EXIT
+          npm run sql:compile
       - run: npm run build

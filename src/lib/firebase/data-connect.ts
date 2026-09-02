@@ -6,7 +6,7 @@ import { getFirebaseDataConnect } from "@/lib/firebase/admin";
 export type FirebaseActor = {
   uid: string;
   email?: string;
-  emailVerified?: boolean;
+  emailVerified: boolean;
 };
 
 function actorOptions(actor: FirebaseActor): OperationOptions {
@@ -14,7 +14,7 @@ function actorOptions(actor: FirebaseActor): OperationOptions {
     sub: actor.uid,
     uid: actor.uid,
     email: actor.email,
-    email_verified: actor.emailVerified ?? true,
+    email_verified: actor.emailVerified,
   };
   return { impersonate: { authClaims } };
 }
