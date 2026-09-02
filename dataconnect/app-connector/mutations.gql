@@ -1,0 +1,181 @@
+mutation CreateProfile(
+  $role: String!
+  $displayName: String!
+  $email: String!
+  $university: String
+  $faculty: String
+  $grade: String
+) @auth(expr: "auth.uid != '' && vars.email == auth.token.email && (vars.role == 'student' || vars.role == 'shop_owner')") {
+  profile_insert(
+    data: {
+      id_expr: "auth.uid"
+      role: $role
+      displayName: $displayName
+      email: $email
+      university: $university
+      faculty: $faculty
+      grade: $grade
+      privacyAgreedAt_expr: "request.time"
+      createdAt_expr: "request.time"
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+
+mutation CreateWish(
+  $shopName: String!
+  $contactName: String!
+  $contactEmail: String!
+  $industry: String!
+  $websiteUrl: String
+  $snsUrl: String
+  $address: String
+  $problem: String!
+  $desiredOutcome: String!
+  $experimentIdea: String
+  $preferredPeriod: String
+  $notes: String
+) @auth(level: USER_EMAIL_VERIFIED) @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'shop_owner'", message: "Shop owner role required")
+    }
+  }
+  wish_insert(
+    data: {
+      ownerId_expr: "auth.uid"
+      shopName: $shopName
+      contactName: $contactName
+      contactEmail: $contactEmail
+      industry: $industry
+      websiteUrl: $websiteUrl
+      snsUrl: $snsUrl
+      address: $address
+      problem: $problem
+      desiredOutcome: $desiredOutcome
+      experimentIdea: $experimentIdea
+      preferredPeriod: $preferredPeriod
+      notes: $notes
+      status: "submitted"
+      createdAt_expr: "request.time"
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+
+mutation PublishChallenge(
+  $wishId: UUID!
+  $title: String!
+  $summary: String!
+  $background: String!
+  $problem: String!
+  $desiredOutcome: String!
+  $shopDisplayName: String!
+  $category: String!
+  $skills: [String!]!
+  $period: String
+  $workload: String
+  $area: String!
+  $capacity: Int!
+  $deadline: Timestamp
+  $status: String!
+  $publishedAt: Timestamp
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.status == 'draft' || vars.status == 'published')") @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin role required")
+    }
+  }
+  challenge_insert(
+    data: {
+      wishId: $wishId
+      title: $title
+      summary: $summary
+      background: $background
+      problem: $problem
+      desiredOutcome: $desiredOutcome
+      shopDisplayName: $shopDisplayName
+      category: $category
+      skills: $skills
+      period: $period
+      workload: $workload
+      area: $area
+      capacity: $capacity
+      deadline: $deadline
+      status: $status
+      publishedAt: $publishedAt
+      createdAt_expr: "request.time"
+      updatedAt_expr: "request.time"
+    }
+  )
+  wish_update(
+    id: $wishId
+    data: { status: "challenge_created", updatedAt_expr: "request.time" }
+  )
+}
+
+mutation CreateApplication(
+  $challengeId: UUID!
+  $motivation: String!
+  $interestReason: String!
+  $skillsExperience: String!
+  $availability: String!
+  $notes: String
+) @auth(level: USER_EMAIL_VERIFIED) @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'student'", message: "Student role required")
+    }
+    challenge(id: $challengeId) {
+      status @check(expr: "this == 'published'", message: "Challenge is not open")
+      deadline @check(expr: "this == null || this >= request.time", message: "Challenge deadline has passed")
+    }
+  }
+  application_insert(
+    data: {
+      challengeId: $challengeId
+      studentId_expr: "auth.uid"
+      motivation: $motivation
+      interestReason: $interestReason
+      skillsExperience: $skillsExperience
+      availability: $availability
+      notes: $notes
+      status: "applied"
+      privacyAgreedAt_expr: "request.time"
+      createdAt_expr: "request.time"
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+
+mutation UpdateApplicationStatus($id: UUID!, $status: String!)
+  @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.status == 'applied' || vars.status == 'reviewing' || vars.status == 'interview' || vars.status == 'matched' || vars.status == 'not_selected' || vars.status == 'withdrawn')")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin role required")
+    }
+  }
+  application_update(
+    id: $id
+    data: { status: $status, updatedAt_expr: "request.time" }
+  )
+}
+
+mutation UpdateChallengeStatus($id: UUID!, $status: String!, $publishedAt: Timestamp)
+  @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.status == 'draft' || vars.status == 'published' || vars.status == 'closed' || vars.status == 'archived')")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin role required")
+    }
+  }
+  challenge_update(
+    id: $id
+    data: {
+      status: $status
+      publishedAt: $publishedAt
+      updatedAt_expr: "request.time"
+    }
+  )
+}

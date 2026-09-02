@@ -1,6 +1,6 @@
 # Screenshots
 
-本番Supabase接続後、以下の画面を保存してください。
+本番Firebase SQL Connect接続後、以下の画面を保存してください。
 
 1. Landing Page（Desktop / Mobile）
 2. Challenge一覧・詳細

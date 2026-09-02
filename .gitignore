@@ -29,6 +29,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+firebase-debug.log*
+
+# Firebase SQL Connect generated SDK (the app uses the Admin SDK directly)
+/src/lib/firebase/generated/
 
 # env files (can opt-in for committing if needed)
 .env*

@@ -1,30 +1,26 @@
 # FUKUSHIMA MACHINAKA LAB
 
-商店主のWISHから、学生のChallengeをつくる。地域の「やりたい・困った」を、学生との小さな実験に変える共創LABの本番MVPです。
-
-初期PoC対象は福島市中心市街地（すずらん通り／パセオ470周辺）。商店主の相談受付から、運営レビュー、Challenge公開、学生応募、運営によるマッチング判断までを一つのWebアプリで扱います。
-
-## Screenshots
-
-本番環境の個人情報を含めず、[docs/screenshots/README.md](docs/screenshots/README.md) の手順で追加してください。
+商店主のWISHから、学生のChallengeをつくる。福島市中心市街地の「やりたい・困った」を、学生との小さな共創実験へ変えるWebアプリです。
 
 ## MVP Scope
 
 - Public: Landing、LAB説明、Challenge一覧・詳細、プライバシー、利用規約
-- Auth: メール＋パスワード登録／ログイン、メール確認、ログアウト
+- Auth: メール＋パスワード登録、メール確認、ログイン、ログアウト
 - SHOP OWNER: WISH登録、自分のWISH一覧・詳細
 - STUDENT: Challenge閲覧・応募、自分の応募履歴
-- ADMIN: WISHレビュー・Challenge化・公開状態管理・応募ステータス管理
-- 共通: モバイル対応、Loading／Empty／404／Error、SEO、アクセシビリティ
+- ADMIN: WISHレビュー、Challenge作成・公開、応募ステータス管理
+- Common: モバイル対応、Loading／Empty／404／Error、SEO、アクセシビリティ
 
-決済、チャット、AI自動マッチング、地図、予約、ポイント、ネイティブアプリは実装していません。
+決済、チャット、AI自動マッチング、地図、予約、ポイント、ネイティブアプリは対象外です。
 
 ## Tech Stack
 
 - Node.js 22+
 - Next.js 16 / React 19 / TypeScript
 - Tailwind CSS 4
-- Supabase Auth / PostgreSQL / Row Level Security
+- Firebase Authentication
+- Firebase SQL Connect / Google Cloud SQL for PostgreSQL
+- Firebase Admin SDK（サーバー専用）
 - Zod / React Server Actions
 - Vitest / Playwright
 - GitHub Actions / Vercel
@@ -36,37 +32,24 @@ flowchart TD
   UI["App Router UI"] --> ACT["Server Actions"]
   UI --> DAL["Server-side DAL"]
   ACT --> WF["Domain workflows"]
-  DAL --> SB["Supabase client"]
-  WF --> SB
-  SB --> RLS["PostgreSQL + RLS"]
+  DAL --> DC["SQL Connect operations"]
+  WF --> DC
+  DC --> AUTH["Connector authorization"]
+  AUTH --> SQL["Cloud SQL for PostgreSQL"]
 ```
 
 主な責務:
 
 - `src/app`: routing、Server Components、Server Actionsの入口
 - `src/components`: 表示とフォーム。DBへ直接アクセスしない
-- `src/lib/auth`: サーバー側の認証・role検証
+- `src/lib/auth`: HttpOnlyセッションCookie、認証・role検証
+- `src/lib/firebase`: Admin SDK、Identity Toolkit、SQL Connect呼び出し、DTO変換
 - `src/features`: WISH／Challenge／Applicationの業務ルール
-- `src/services`: 読み取り用DAL。画面へ必要なDTOだけ返す
-- `supabase/migrations`: schema、index、trigger、GRANT、RLSの再現可能な定義
+- `src/services`: 読み取り用DAL
+- `dataconnect/schema`: PostgreSQL schema、外部キー、unique制約、index
+- `dataconnect/app-connector`: 認証・認可付きquery／mutation
 
-## GitHub Pages（静的プレビュー）
-
-`main` に push すると `.github/workflows/nextjs.yml` が `https://<user>.github.io/<repo>/` へ静的サイトを公開します。
-初回のみ GitHub の **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に変更してください。
-
-GitHub Pages はサーバーを持たないため、公開されるのは **SAMPLE データのプレビュー** です。
-
-- 動くもの: Landing、LAB説明、Challenge一覧・詳細、プライバシー、利用規約
-- 動かないもの: 登録／ログイン、WISH相談、応募、管理画面（フォーム送信時に案内を表示）
-
-本番のWebApp（Supabase接続あり）は Vercel などのサーバー実行環境へデプロイしてください。
-
-```bash
-GITHUB_PAGES_BASE_PATH=/fukushima-machinaka-lab npm run build:pages   # out/ に静的ファイルを生成
-```
-
-仕組み: `scripts/build-github-pages.mjs` が静的書き出しと両立しないファイル（`src/proxy.ts`、`auth/callback`、認証必須の動的ページ）を一時退避し、`next.config.ts` の `GITHUB_PAGES=true` 分岐で `output: "export"` と `basePath` を有効化、Server Actions を `src/actions-static/` のダミーへ差し替えてビルドします。
+Admin SDKからSQL Connectを呼ぶ際も利用者をimpersonateし、connectorの`@auth`・`@check`を必ず評価します。管理SDKの権限バイパスを通常リクエストに使用しません。
 
 ## Local Setup
 
@@ -76,105 +59,97 @@ cd fukushima-machinaka-lab
 nvm use
 npm install
 cp .env.example .env.local
-```
-
-Supabase未設定でも、公開ページは明示的なSAMPLEデータを使うプレビューモードで起動できます。登録、ログイン、WISH、応募、管理機能にはSupabase接続が必要です。
-
-```bash
 npm run dev
 ```
 
-`http://localhost:3000` を開きます。
+Firebase未設定でも、公開ページは明示的なSAMPLEデータを使うプレビューモードで起動します。登録、ログイン、WISH、応募、管理機能にはFirebase接続が必要です。
 
-## Supabase Setup
+## Firebase SQL Connect Setup
 
-### Local Supabase
+このリポジトリの既定値:
 
-Docker Desktopを起動後:
+| Resource | Value |
+|---|---|
+| Firebase project | `fukushima-machinaka-lab` |
+| Region | `asia-northeast1`（東京） |
+| Service | `fukushima-machinaka-lab-service` |
+| Cloud SQL instance | `fukushima-machinaka-lab-instance` |
+| Database | `fukushima-machinaka-lab-database` |
+| Connector | `app-connector` |
 
-```bash
-npm run db:start
-npm run db:reset
-```
-
-`supabase status` が表示するProject URLとPublishable/anon keyを `.env.local` に設定します。`seed.sql` はローカル開発専用です。
-
-### Remote Supabase
-
-新規プロジェクトを作成し、CLIでリンクしてmigrationを適用します。
+スキーマとconnectorを検証・反映します。
 
 ```bash
-npx supabase login
-npx supabase link --project-ref <project-ref>
-npx supabase db push
+npm run sql:compile
+npm run sql:deploy
+npm run sql:seed
 ```
 
-Auth設定ではSite URLとRedirect URLに次を登録します。
+`sql:seed`は3件のSAMPLE Challengeをupsertします。実データは含みません。
 
-- Local: `http://localhost:3000/auth/callback`
-- Production: `https://<your-domain>/auth/callback`
+Firebase AuthenticationではEmail/Passwordを有効にし、本番ドメインをAuthorized domainsへ追加してください。登録後は確認メールを開くまでログインできません。
 
-### First admin
+## First Admin
 
-adminは登録画面から選択できません。最初に通常ユーザーとして登録・メール確認を完了し、プロジェクト所有者がSQL Editorで一度だけ昇格します。
+adminは登録画面から選択できません。対象者が通常ユーザーとして登録しメール確認を終えた後、プロジェクト所有者がGoogle Cloud SQL Studioで対象メールと更新件数を確認し、一度だけ昇格します。
 
 ```sql
-update public.profiles
-set role = 'admin'
-where email = '<operator-email>';
+UPDATE profile
+SET role = 'admin', updated_at = CURRENT_TIMESTAMP
+WHERE email = '<operator-email>';
 ```
-
-対象メールと更新件数を必ず確認してください。以降もadmin付与は運営の管理手続きとして行います。
 
 ## Environment Variables
 
-| Key | Required | Purpose |
-|---|---:|---|
-| `NEXT_PUBLIC_SITE_URL` | Yes | メール確認URL、metadata、sitemapの基準URL |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase Project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | ブラウザ利用可能なpublishable key |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Legacy | 旧プロジェクト互換。publishable keyを優先 |
-| `E2E_*` | Test only | テスト専用アカウント。GitHub Secretsで管理 |
+| Key | Exposure | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | Public | metadata、sitemap、確認メール遷移先 |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Public | Firebase project ID |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Public | Identity Toolkit client key |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Server only | Admin SDK service account |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Server only | Admin SDK private key |
+| `E2E_*` | Test only | 認証付きE2E専用アカウント |
 
-`SUPABASE_SERVICE_ROLE_KEY` は不要です。ブラウザ、Vercel、GitHubへ登録しないでください。
+`FIREBASE_ADMIN_*`をブラウザ、Git、Issue、ログへ出さないでください。Vercelの暗号化されたEnvironment Variablesで管理します。
 
-## Database
+## Data Model
 
 | Table | Purpose | Sensitive data |
 |---|---|---|
-| `profiles` | role、表示名、学生所属 | 氏名、メール、所属 |
-| `wishes` | 商店主の相談原本 | 担当者、メール、住所、自由記述 |
-| `challenges` | 運営編集済み公開課題 | 公開可能な情報だけ |
-| `applications` | 学生応募とKNOT状態 | 応募理由、経験、参加可能期間 |
+| `profile` | role、表示名、学生所属 | 氏名、メール、所属 |
+| `wish` | 商店主の相談原本 | 担当者、メール、住所、自由記述 |
+| `challenge` | 運営編集済み公開課題 | 公開可能な情報だけ |
+| `application` | 学生応募とKNOT状態 | 応募理由、経験、参加可能期間 |
 
-全テーブルでRLSを有効化し、`owner_id`、`student_id`、status系列にindexを設定しています。
+外部キー、応募の複合unique制約、所有者・状態・作成日時のindexを定義しています。
 
-## RLS Summary
+## Authorization Summary
 
-| Role | Profiles | WISH | Challenge | Application |
+| Role | Profile | WISH | Challenge | Application |
 |---|---|---|---|---|
-| anon | - | - | publishedのみ | - |
-| shop_owner | 自分 | 自分のみ作成・閲覧・編集 | published＋自分のWISH由来 | - |
-| student | 自分 | - | publishedのみ | 自分のみ作成・閲覧 |
-| admin | 全件閲覧 | 全件管理 | 全件管理 | 全件管理 |
+| public | - | - | publishedのみ | - |
+| shop_owner | 自分 | 自分のみ作成・閲覧 | published | - |
+| student | 自分 | - | published | 自分のみ作成・閲覧 |
+| admin | 自分＋role検証 | 全件管理 | 全件管理 | 全件管理 |
 
 追加の防御:
 
-- 登録時のroleは `shop_owner` / `student` にDB triggerで限定
-- role判定にユーザー編集可能な`user_metadata`を使わない
-- admin確認はServer ActionとRLSの双方で実施
-- 非公開住所・連絡先は`wishes`だけに保存し、公開`challenges`へ自動コピーしない
-- Data API権限を明示的にGRANTし、default privilegeをREVOKE
+- 登録時roleを`shop_owner` / `student`にconnectorで限定
+- admin確認をServer Actionとconnectorの両方で実施
+- WISH所有者・Application学生IDを`auth.uid`からサーバー設定
+- 非公開住所・連絡先を公開Challenge queryへ含めない
+- Challenge公開とWISH状態更新を単一SQL transactionで実行
+- 応募作成前に公開状態、締切、重複をDB側で検証
 
-## Seed
+## GitHub Pages
 
-`supabase/seed.sql` の3件は `is_sample = true` のDEMOデータです。
+`main`へのpushで `.github/workflows/nextjs.yml` がGitHub Pagesへ静的プレビューを公開します。サーバー機能を持たないため、公開ページとSAMPLEデータのみが対象です。
 
 ```bash
-npm run db:reset
+GITHUB_PAGES_BASE_PATH=/fukushima-machinaka-lab npm run build:pages
 ```
 
-productionへseedを自動適用しないでください。
+登録／ログイン、WISH相談、応募、管理画面の本番動作はVercel版で提供します。
 
 ## Quality Checks
 
@@ -183,52 +158,46 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run build:pages
 npm run test:e2e
+npm audit --omit=dev
 ```
 
-認証付きE2Eには、専用Supabase環境と `.env.example` にある `E2E_*` のテストユーザーが必要です。公開導線のDesktop／Mobile E2EはSAMPLEモードでも実行できます。
-
-## GitHub Actions
-
-`.github/workflows/ci.yml` はpush／Pull Requestごとに次を実行します。
-
-1. `npm ci`
-2. `npm run lint`
-3. `npm run typecheck`
-4. `npm test`
-5. `npm run build`
-
-秘密情報を必要としないSAMPLEモードでbuildできるため、fork PRにもsecretを公開しません。
+CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テスト、本番buildを実行します。認証付きE2Eは本番利用者ではなく専用テスト環境・専用アカウントで行ってください。
 
 ## Vercel Deployment
 
 1. GitHub repositoryをVercelへImport
-2. Framework Preset: Next.js、Node.js: 22.x
-3. Environment Variablesに3つの`NEXT_PUBLIC_*`をProduction / Preview / Developmentへ設定
-4. Supabase AuthのRedirect URLへVercel URLを追加
-5. Previewを確認後、Productionへpromote
-
-CLIの場合:
-
-```bash
-npx vercel link
-npx vercel env pull .env.local
-npm run build
-npx vercel deploy
-npx vercel promote <verified-preview-url>
-```
+2. Framework PresetをNext.js、Node.jsを22.xに設定
+3. 上記5つの本番Environment Variablesを設定
+4. Firebase AuthenticationのAuthorized domainsへVercel本番ドメインを追加
+5. Previewで公開・認証・権限・DB保存を確認
+6. Productionへpromote
 
 ## Security Notes
 
-- `.env*` は `.gitignore` 対象で、`.env.example` だけをcommitします
-- Server Actionsは公開APIと同様に毎回認証・role検証します
-- 入力はZodとDB constraintsの二段階で検証します
-- Supabase clientのparameterized APIを使用し、SQL文字列連結を行いません
-- Reactの標準escapeを利用し、ユーザーHTMLを描画しません
-- Next.js既定のServer Action origin検証とSameSite auth cookieを利用します
-- 詳細は [SECURITY.md](SECURITY.md) を参照してください
+- `.env*`は`.gitignore`対象で、`.env.example`だけをcommit
+- セッションはHttpOnly、Secure（本番）、SameSite=Lax Cookie
+- Server Actionsは公開APIと同様に毎回認証・roleを検証
+- 入力はZod、connector authorization、SQL constraintsで多層検証
+- Reactの標準escapeを利用し、ユーザーHTMLを描画しない
+- 個人情報を含むログやスクリーンショットを公開しない
+- 詳細は [SECURITY.md](SECURITY.md) を参照
 
-## Future Roadmap
+## Production Checklist
+
+- [ ] SQL Connect schema／connectorを本番へdeploy
+- [ ] SAMPLE seedを適用し公開queryを確認
+- [ ] Firebase Authのメール送信元、テンプレート、Authorized domainsを確認
+- [ ] 最初のadminを昇格し、一般登録でadminになれないことを確認
+- [ ] Vercelへ公開値2件・サーバー秘密値2件・本番URLを設定
+- [ ] SHOP OWNER → WISH → ADMIN → Challenge → STUDENT → Applicationを通しテスト
+- [ ] 権限外アクセス、重複応募、締切後応募、session失効を確認
+- [ ] プライバシーポリシー、利用規約、保存期間、削除手順を専門家が確認
+- [ ] Mobile実機、キーボード操作、コントラストを確認
+- [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
+
+## Roadmap
 
 - Phase 2: LAB進捗管理
 - Phase 3: DEMO成果ページ
@@ -236,18 +205,3 @@ npx vercel promote <verified-preview-url>
 - Phase 5: 複数商店街対応
 - Phase 6: 大学・行政・金融機関Dashboard
 - Phase 7: Residence / 滞在連携
-
-## Production Checklist
-
-- [ ] プライバシーポリシー／利用規約を専門家が確認
-- [ ] 運営主体、問い合わせ先、保存期間、削除手順を確定
-- [ ] Supabase AuthのSMTP、Site URL、Redirect URLを本番設定
-- [ ] 最初のadminを昇格し、一般登録でadminになれないことを再確認
-- [ ] migration適用後にSupabase Database Advisorsを確認
-- [ ] SHOP OWNER → WISH → ADMIN → Challenge → STUDENT → Applicationを実データで通しテスト
-- [ ] Mobile実機、キーボード操作、コントラストを確認
-- [ ] Vercel Previewを確認後にProductionへpromote
-
-## Status
-
-コード、migration、CI定義はGitHubへpush可能です。本番公開は、別途Supabaseプロジェクト作成・環境変数設定・法務文面確認・実データ通しテストを完了してから行ってください。
