@@ -5,7 +5,7 @@ mutation CreateProfile(
   $university: String
   $faculty: String
   $grade: String
-) @auth(expr: "auth.uid != nil && vars.email == auth.token.email && (vars.role == 'student' || vars.role == 'shop_owner')") {
+) @auth(expr: "auth.uid != '' && vars.email == auth.token.email && (vars.role == 'student' || vars.role == 'shop_owner')") {
   profile_insert(
     data: {
       id_expr: "auth.uid"
@@ -80,7 +80,7 @@ mutation PublishChallenge(
   $deadline: Timestamp
   $status: String!
   $publishedAt: Timestamp
-) @auth(expr: "auth.uid != nil && auth.token.email_verified == true && (vars.status == 'draft' || vars.status == 'published')") @transaction {
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.status == 'draft' || vars.status == 'published')") @transaction {
   query @redact {
     profile(key: { id_expr: "auth.uid" }) {
       role @check(expr: "this == 'admin'", message: "Admin role required")
@@ -149,7 +149,7 @@ mutation CreateApplication(
 }
 
 mutation UpdateApplicationStatus($id: UUID!, $status: String!)
-  @auth(expr: "auth.uid != nil && auth.token.email_verified == true && (vars.status == 'applied' || vars.status == 'reviewing' || vars.status == 'interview' || vars.status == 'matched' || vars.status == 'not_selected' || vars.status == 'withdrawn')")
+  @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.status == 'applied' || vars.status == 'reviewing' || vars.status == 'interview' || vars.status == 'matched' || vars.status == 'not_selected' || vars.status == 'withdrawn')")
   @transaction {
   query @redact {
     profile(key: { id_expr: "auth.uid" }) {
@@ -163,7 +163,7 @@ mutation UpdateApplicationStatus($id: UUID!, $status: String!)
 }
 
 mutation UpdateChallengeStatus($id: UUID!, $status: String!, $publishedAt: Timestamp)
-  @auth(expr: "auth.uid != nil && auth.token.email_verified == true && (vars.status == 'draft' || vars.status == 'published' || vars.status == 'closed' || vars.status == 'archived')")
+  @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.status == 'draft' || vars.status == 'published' || vars.status == 'closed' || vars.status == 'archived')")
   @transaction {
   query @redact {
     profile(key: { id_expr: "auth.uid" }) {

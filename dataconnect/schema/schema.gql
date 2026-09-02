@@ -7,7 +7,7 @@ type Profile @table(key: "id") {
   faculty: String
   grade: String
   bio: String
-  skills: [String!]! @default(value: [])
+  skills: [String!]! @default(sql: "'{}'::text[]")
   privacyAgreedAt: Timestamp! @default(expr: "request.time")
   createdAt: Timestamp! @default(expr: "request.time")
   updatedAt: Timestamp! @default(expr: "request.time")
@@ -47,7 +47,7 @@ type Challenge
   desiredOutcome: String!
   shopDisplayName: String!
   category: String!
-  skills: [String!]! @default(value: [])
+  skills: [String!]! @default(sql: "'{}'::text[]")
   period: String
   workload: String
   area: String!
