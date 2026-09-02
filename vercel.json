@@ -1,0 +1,3 @@
+{
+  "buildCommand": "node scripts/deploy-dataconnect-ci.mjs && npm run build"
+}
