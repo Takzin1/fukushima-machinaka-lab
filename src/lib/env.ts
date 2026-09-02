@@ -7,7 +7,6 @@ function clean(value: string | undefined) {
 function parseHttpUrl(value: string | undefined, assumeHttps = false) {
   const cleaned = clean(value);
   if (!cleaned) return undefined;
-
   const candidate = assumeHttps && !/^https?:\/\//i.test(cleaned)
     ? `https://${cleaned}`
     : cleaned;
@@ -32,28 +31,43 @@ export function resolveSiteUrl(
   );
 }
 
-const supabaseUrl = clean(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const supabasePublishableKey =
-  clean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) ??
-  clean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const projectId = clean(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+const apiKey = clean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+const adminClientEmail = clean(process.env.FIREBASE_ADMIN_CLIENT_EMAIL);
+const adminPrivateKey = clean(process.env.FIREBASE_ADMIN_PRIVATE_KEY)?.replace(
+  /\\n/g,
+  "\n",
+);
 
 export const publicEnv = {
   siteUrl: resolveSiteUrl(
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL,
   ),
-  supabaseUrl,
-  supabasePublishableKey,
+  firebaseProjectId: projectId,
+  firebaseApiKey: apiKey,
 };
 
-export function isSupabaseConfigured() {
-  return Boolean(supabaseUrl && supabasePublishableKey);
+export const firebaseConnector = {
+  location: "asia-northeast1",
+  serviceId: "fukushima-machinaka-lab-service",
+  connector: "app-connector",
+} as const;
+
+export function isFirebaseConfigured() {
+  return Boolean(projectId && apiKey && adminClientEmail && adminPrivateKey);
 }
 
-export function requireSupabaseEnv() {
-  if (!supabaseUrl || !supabasePublishableKey) {
-    throw new Error("Supabase environment variables are not configured.");
+export function requireFirebaseAuthEnv() {
+  if (!projectId || !apiKey) {
+    throw new Error("Firebase Auth environment variables are not configured.");
   }
+  return { projectId, apiKey };
+}
 
-  return { supabaseUrl, supabasePublishableKey };
+export function requireFirebaseAdminEnv() {
+  if (!projectId || !adminClientEmail || !adminPrivateKey) {
+    throw new Error("Firebase Admin environment variables are not configured.");
+  }
+  return { projectId, adminClientEmail, adminPrivateKey };
 }

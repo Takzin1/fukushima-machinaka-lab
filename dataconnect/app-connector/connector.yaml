@@ -1,0 +1,5 @@
+connectorId: "app-connector"
+generate:
+  javascriptSdk:
+    outputDir: "../../src/lib/firebase/generated"
+    package: "@firebasegen/app-connector"

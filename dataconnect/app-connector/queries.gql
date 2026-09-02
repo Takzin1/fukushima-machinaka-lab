@@ -1,0 +1,178 @@
+fragment ProfileFields on Profile {
+  id
+  role
+  displayName
+  email
+  university
+  faculty
+  grade
+  bio
+  skills
+  privacyAgreedAt
+  createdAt
+  updatedAt
+}
+
+fragment WishFields on Wish {
+  id
+  ownerId
+  shopName
+  contactName
+  contactEmail
+  industry
+  websiteUrl
+  snsUrl
+  address
+  problem
+  desiredOutcome
+  experimentIdea
+  preferredPeriod
+  notes
+  status
+  createdAt
+  updatedAt
+}
+
+fragment ChallengeFields on Challenge {
+  id
+  wishId
+  title
+  summary
+  background
+  problem
+  desiredOutcome
+  shopDisplayName
+  category
+  skills
+  period
+  workload
+  area
+  capacity
+  deadline
+  status
+  isSample
+  publishedAt
+  createdAt
+  updatedAt
+}
+
+fragment ApplicationFields on Application {
+  id
+  challengeId
+  studentId
+  motivation
+  interestReason
+  skillsExperience
+  availability
+  notes
+  status
+  privacyAgreedAt
+  createdAt
+  updatedAt
+}
+
+query GetCurrentProfile @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) {
+    ...ProfileFields
+  }
+}
+
+query ListPublishedChallenges
+  @auth(level: PUBLIC, insecureReason: "Only explicitly published Challenge fields are selected; private WISH and application data are excluded.") {
+  challenges(
+    where: { status: { eq: "published" } }
+    orderBy: [{ publishedAt: DESC }]
+  ) {
+    ...ChallengeFields
+  }
+}
+
+query GetPublishedChallenge($id: UUID!)
+  @auth(level: PUBLIC, insecureReason: "The identifier is filtered with published status and only public Challenge fields are selected.") {
+  challenges(
+    where: { _and: [{ id: { eq: $id } }, { status: { eq: "published" } }] }
+    limit: 1
+  ) {
+    ...ChallengeFields
+  }
+}
+
+query ListOwnerWishes @auth(level: USER_EMAIL_VERIFIED) {
+  wishes(
+    where: { ownerId: { eq_expr: "auth.uid" } }
+    orderBy: [{ createdAt: DESC }]
+  ) {
+    ...WishFields
+  }
+}
+
+query GetOwnedWish($id: UUID!) @auth(level: USER_EMAIL_VERIFIED) {
+  wishes(
+    where: { _and: [{ id: { eq: $id } }, { ownerId: { eq_expr: "auth.uid" } }] }
+    limit: 1
+  ) {
+    ...WishFields
+  }
+}
+
+query AdminGetWish($id: UUID!) @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin role required")
+  }
+  wish(id: $id) {
+    ...WishFields
+  }
+}
+
+query AdminListWishes @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin role required")
+  }
+  wishes(orderBy: [{ createdAt: DESC }]) {
+    ...WishFields
+  }
+}
+
+query AdminListChallenges @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin role required")
+  }
+  challenges(orderBy: [{ createdAt: DESC }]) {
+    ...ChallengeFields
+  }
+}
+
+query ListStudentApplications @auth(level: USER_EMAIL_VERIFIED) {
+  applications(
+    where: { studentId: { eq_expr: "auth.uid" } }
+    orderBy: [{ createdAt: DESC }]
+  ) {
+    ...ApplicationFields
+    challenge {
+      id
+      title
+      shopDisplayName
+    }
+  }
+}
+
+query AdminListApplications @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin role required")
+  }
+  applications(orderBy: [{ createdAt: DESC }]) {
+    ...ApplicationFields
+    challenge {
+      id
+      title
+      shopDisplayName
+    }
+    student {
+      displayName
+      university
+      faculty
+      grade
+      skills
+    }
+  }
+}

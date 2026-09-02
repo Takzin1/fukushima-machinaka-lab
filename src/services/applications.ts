@@ -1,31 +1,27 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
-import type { ApplicationWithContext } from "@/types/domain";
+import { requireRole } from "@/lib/auth/dal";
+import { executeUserQuery } from "@/lib/firebase/data-connect";
+import {
+  mapApplicationWithContext,
+  type DataRecord,
+} from "@/lib/firebase/mappers";
 
 export async function getStudentApplications(studentId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("applications")
-    .select(
-      "id, challenge_id, student_id, motivation, interest_reason, skills_experience, availability, notes, status, privacy_agreed_at, created_at, updated_at, challenges(id, title, shop_display_name)",
-    )
-    .eq("student_id", studentId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error("応募履歴を取得できませんでした。");
-  return (data ?? []) as unknown as ApplicationWithContext[];
+  const user = await requireRole("student");
+  if (studentId !== user.id) throw new Error("FORBIDDEN");
+  const response = await executeUserQuery<{ applications: DataRecord[] }>(
+    "ListStudentApplications",
+    { uid: user.id, email: user.email, emailVerified: true },
+  );
+  return response.data.applications.map(mapApplicationWithContext);
 }
 
 export async function getAllApplications() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("applications")
-    .select(
-      "id, challenge_id, student_id, motivation, interest_reason, skills_experience, availability, notes, status, privacy_agreed_at, created_at, updated_at, challenges(id, title, shop_display_name), profiles(display_name, university, faculty, grade, skills)",
-    )
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error("応募管理データを取得できませんでした。");
-  return (data ?? []) as unknown as ApplicationWithContext[];
+  const user = await requireRole("admin");
+  const response = await executeUserQuery<{ applications: DataRecord[] }>(
+    "AdminListApplications",
+    { uid: user.id, email: user.email, emailVerified: true },
+  );
+  return response.data.applications.map(mapApplicationWithContext);
 }

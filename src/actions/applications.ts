@@ -2,12 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  createSupabaseWorkflowGateway,
-  submitApplication,
-} from "@/features/workflows";
+import { createFirebaseWorkflowGateway } from "@/features/firebase-workflow-gateway";
+import { submitApplication } from "@/features/workflows";
 import { requireRole } from "@/lib/auth/dal";
-import { createClient } from "@/lib/supabase/server";
 import { applicationSchema, fieldErrors, formDataObject } from "@/lib/validation";
 import type { FormState } from "@/types/domain";
 
@@ -23,11 +20,14 @@ export async function createApplicationAction(
   }
 
   try {
-    const supabase = await createClient();
     await submitApplication(
       { id: user.id, role: user.profile.role },
       parsed.data,
-      createSupabaseWorkflowGateway(supabase),
+      createFirebaseWorkflowGateway({
+        uid: user.id,
+        email: user.email,
+        emailVerified: true,
+      }),
     );
   } catch (error) {
     const code = error instanceof Error ? error.message : "";

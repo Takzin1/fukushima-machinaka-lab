@@ -1,0 +1,81 @@
+type Profile @table(key: "id") {
+  id: String! @default(expr: "auth.uid")
+  role: String! @default(value: "student")
+  displayName: String!
+  email: String! @unique
+  university: String
+  faculty: String
+  grade: String
+  bio: String
+  skills: [String!]! @default(value: [])
+  privacyAgreedAt: Timestamp! @default(expr: "request.time")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}
+
+type Wish
+  @table
+  @index(fields: ["status", "createdAt"], order: [ASC, DESC]) {
+  ownerId: String! @index
+  owner: Profile! @ref(fields: ["ownerId"], references: ["id"])
+  shopName: String!
+  contactName: String!
+  contactEmail: String!
+  industry: String!
+  websiteUrl: String
+  snsUrl: String
+  address: String
+  problem: String!
+  desiredOutcome: String!
+  experimentIdea: String
+  preferredPeriod: String
+  notes: String
+  status: String! @default(value: "submitted")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}
+
+type Challenge
+  @table
+  @index(fields: ["status", "publishedAt"], order: [ASC, DESC]) {
+  wishId: UUID @index
+  wish: Wish @ref(fields: ["wishId"], references: ["id"])
+  title: String!
+  summary: String!
+  background: String!
+  problem: String!
+  desiredOutcome: String!
+  shopDisplayName: String!
+  category: String!
+  skills: [String!]! @default(value: [])
+  period: String
+  workload: String
+  area: String!
+  capacity: Int! @default(value: 1)
+  deadline: Timestamp
+  status: String! @default(value: "draft")
+  isSample: Boolean! @default(value: false)
+  publishedAt: Timestamp
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}
+
+type Application
+  @table
+  @unique(fields: ["challengeId", "studentId"])
+  @index(fields: ["studentId", "createdAt"], order: [ASC, DESC])
+  @index(fields: ["challengeId", "status"], order: [ASC, ASC]) {
+  challengeId: UUID!
+  challenge: Challenge! @ref(fields: ["challengeId"], references: ["id"])
+  studentId: String!
+  student: Profile! @ref(fields: ["studentId"], references: ["id"])
+  motivation: String!
+  interestReason: String!
+  skillsExperience: String!
+  availability: String!
+  notes: String
+  status: String! @default(value: "applied")
+  privacyAgreedAt: Timestamp! @default(expr: "request.time")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}

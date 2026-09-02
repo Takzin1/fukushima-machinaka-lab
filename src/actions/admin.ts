@@ -3,12 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import {
-  createSupabaseWorkflowGateway,
-  publishChallenge,
-} from "@/features/workflows";
+import { createFirebaseWorkflowGateway } from "@/features/firebase-workflow-gateway";
+import { publishChallenge } from "@/features/workflows";
 import { requireRole } from "@/lib/auth/dal";
-import { createClient } from "@/lib/supabase/server";
+import { executeUserMutation } from "@/lib/firebase/data-connect";
 import {
   applicationStatusSchema,
   challengeSchema,
@@ -29,11 +27,14 @@ export async function createChallengeAction(
   }
 
   try {
-    const supabase = await createClient();
     await publishChallenge(
       { id: user.id, role: user.profile.role },
       parsed.data,
-      createSupabaseWorkflowGateway(supabase),
+      createFirebaseWorkflowGateway({
+        uid: user.id,
+        email: user.email,
+        emailVerified: true,
+      }),
     );
   } catch {
     return {
@@ -49,17 +50,19 @@ export async function createChallengeAction(
 }
 
 export async function updateApplicationStatusAction(formData: FormData) {
-  await requireRole("admin");
+  const user = await requireRole("admin");
   const parsed = applicationStatusSchema.safeParse(formDataObject(formData));
   if (!parsed.success) redirect("/admin/applications?error=invalid-status");
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("applications")
-    .update({ status: parsed.data.status })
-    .eq("id", parsed.data.applicationId);
-
-  if (error) redirect("/admin/applications?error=update-failed");
+  try {
+    await executeUserMutation(
+      "UpdateApplicationStatus",
+      { uid: user.id, email: user.email, emailVerified: true },
+      { id: parsed.data.applicationId, status: parsed.data.status },
+    );
+  } catch {
+    redirect("/admin/applications?error=update-failed");
+  }
   revalidatePath("/admin/applications");
   redirect("/admin/applications?updated=1");
 }
@@ -70,20 +73,24 @@ const challengeStatusSchema = z.object({
 });
 
 export async function updateChallengeStatusAction(formData: FormData) {
-  await requireRole("admin");
+  const user = await requireRole("admin");
   const parsed = challengeStatusSchema.safeParse(formDataObject(formData));
   if (!parsed.success) redirect("/admin/challenges?error=invalid-status");
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("challenges")
-    .update({
-      status: parsed.data.status,
-      published_at: parsed.data.status === "published" ? new Date().toISOString() : null,
-    })
-    .eq("id", parsed.data.challengeId);
-
-  if (error) redirect("/admin/challenges?error=update-failed");
+  try {
+    await executeUserMutation(
+      "UpdateChallengeStatus",
+      { uid: user.id, email: user.email, emailVerified: true },
+      {
+        id: parsed.data.challengeId,
+        status: parsed.data.status,
+        publishedAt:
+          parsed.data.status === "published" ? new Date().toISOString() : null,
+      },
+    );
+  } catch {
+    redirect("/admin/challenges?error=update-failed");
+  }
   revalidatePath("/admin/challenges");
   revalidatePath("/challenges");
   redirect("/admin/challenges?updated=1");

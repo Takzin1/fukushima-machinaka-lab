@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "fukushima-machinaka-lab-service"
+location: "asia-northeast1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fukushima-machinaka-lab-database"
+      cloudSql:
+        instanceId: "fukushima-machinaka-lab-instance"
+connectorDirs:
+  - "./app-connector"

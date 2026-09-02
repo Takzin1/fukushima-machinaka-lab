@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createSupabaseWorkflowGateway, submitWish } from "@/features/workflows";
+import { createFirebaseWorkflowGateway } from "@/features/firebase-workflow-gateway";
+import { submitWish } from "@/features/workflows";
 import { requireRole } from "@/lib/auth/dal";
-import { createClient } from "@/lib/supabase/server";
 import { fieldErrors, formDataObject, wishSchema } from "@/lib/validation";
 import type { FormState } from "@/types/domain";
 
@@ -20,11 +20,14 @@ export async function createWishAction(
   }
 
   try {
-    const supabase = await createClient();
     await submitWish(
       { id: user.id, role: user.profile.role },
       parsed.data,
-      createSupabaseWorkflowGateway(supabase),
+      createFirebaseWorkflowGateway({
+        uid: user.id,
+        email: user.email,
+        emailVerified: true,
+      }),
     );
   } catch {
     return {

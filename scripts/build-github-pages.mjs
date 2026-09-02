@@ -1,6 +1,6 @@
 /**
  * GitHub Pages 用の静的ビルド。
- * GitHub Pages はサーバーを持たないため、Supabase 認証・Server Actions・Route Handler・proxy(middleware) は動かない。
+ * GitHub Pages はサーバーを持たないため、Firebase 認証・SQL Connect・Server Actions は動かない。
  * このスクリプトは、静的書き出しと両立しないファイルを一時的に退避してから `next build` を実行し、終了後に必ず元へ戻す。
  * 公開ページ（/, /about, /challenges, /challenges/[id], /privacy, /terms）は SAMPLE データのプレビューとして出力される。
  */
@@ -11,8 +11,6 @@ import path from "node:path";
 const root = process.cwd();
 const stash = path.join(root, ".pages-stash");
 const incompatible = [
-  "src/app/auth/callback/route.ts",
-  "src/proxy.ts",
   // 認証必須の動的ページ。静的書き出しでは生成対象を持たないため除外する。
   "src/app/owner/wishes/[id]",
   "src/app/admin/wishes/[id]",
@@ -42,9 +40,10 @@ try {
       GITHUB_PAGES_BASE_PATH: basePath,
       NEXT_PUBLIC_SITE_URL: siteUrl,
       // GitHub Pages では認証を使わない。値が入っていても静的プレビューとして出力する。
-      NEXT_PUBLIC_SUPABASE_URL: "",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: "",
+      NEXT_PUBLIC_FIREBASE_API_KEY: "",
+      FIREBASE_ADMIN_CLIENT_EMAIL: "",
+      FIREBASE_ADMIN_PRIVATE_KEY: "",
     },
   });
   status = result.status ?? 1;

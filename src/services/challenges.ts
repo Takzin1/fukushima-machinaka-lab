@@ -1,51 +1,40 @@
 import "server-only";
 
+import { connection } from "next/server";
 import { demoChallenges } from "@/data/demo-challenges";
-import { isSupabaseConfigured } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/dal";
+import { isFirebaseConfigured } from "@/lib/env";
+import { executePublicQuery, executeUserQuery } from "@/lib/firebase/data-connect";
+import { mapChallenge, type DataRecord } from "@/lib/firebase/mappers";
 import type { Challenge } from "@/types/domain";
 
-const challengeColumns =
-  "id, wish_id, title, summary, background, problem, desired_outcome, shop_display_name, category, skills, period, workload, area, capacity, deadline, status, is_sample, published_at, created_at, updated_at";
-
 export async function getPublishedChallenges(): Promise<Challenge[]> {
-  if (!isSupabaseConfigured()) return demoChallenges;
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("challenges")
-    .select(challengeColumns)
-    .eq("status", "published")
-    .order("published_at", { ascending: false });
-
-  if (error) throw new Error("Challenge一覧を取得できませんでした。");
-  return (data ?? []) as Challenge[];
+  if (!isFirebaseConfigured()) return demoChallenges;
+  await connection();
+  const response = await executePublicQuery<{ challenges: DataRecord[] }>(
+    "ListPublishedChallenges",
+  );
+  return response.data.challenges.map(mapChallenge);
 }
 
 export async function getPublishedChallenge(id: string): Promise<Challenge | null> {
-  if (!isSupabaseConfigured()) {
+  if (!isFirebaseConfigured()) {
     return demoChallenges.find((challenge) => challenge.id === id) ?? null;
   }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("challenges")
-    .select(challengeColumns)
-    .eq("id", id)
-    .eq("status", "published")
-    .maybeSingle();
-
-  if (error) throw new Error("Challengeを取得できませんでした。");
-  return data as Challenge | null;
+  await connection();
+  const response = await executePublicQuery<
+    { challenges: DataRecord[] },
+    { id: string }
+  >("GetPublishedChallenge", { id });
+  const row = response.data.challenges[0];
+  return row ? mapChallenge(row) : null;
 }
 
 export async function getAllChallenges(): Promise<Challenge[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("challenges")
-    .select(challengeColumns)
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error("Challenge管理データを取得できませんでした。");
-  return (data ?? []) as Challenge[];
+  const user = await requireRole("admin");
+  const response = await executeUserQuery<{ challenges: DataRecord[] }>(
+    "AdminListChallenges",
+    { uid: user.id, email: user.email, emailVerified: true },
+  );
+  return response.data.challenges.map(mapChallenge);
 }

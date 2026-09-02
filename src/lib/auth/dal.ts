@@ -2,8 +2,10 @@ import "server-only";
 
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { isSupabaseConfigured } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { isFirebaseConfigured } from "@/lib/env";
+import { executeUserQuery } from "@/lib/firebase/data-connect";
+import { mapProfile, type DataRecord } from "@/lib/firebase/mappers";
+import { getFirebaseSession } from "@/lib/firebase/session";
 import type { Profile, UserRole } from "@/types/domain";
 
 export type UserContext = {
@@ -12,30 +14,33 @@ export type UserContext = {
   profile: Profile;
 };
 
+type ProfileResult = { profile: DataRecord | null };
+
 export const getUserContext = cache(async (): Promise<UserContext | null> => {
-  if (!isSupabaseConfigured()) return null;
+  if (!isFirebaseConfigured()) return null;
 
-  const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
+  const session = await getFirebaseSession();
+  if (!session?.uid || session.email_verified !== true) return null;
 
-  if (claimsError || !claims?.sub) return null;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select(
-      "id, role, display_name, email, university, faculty, grade, bio, skills, privacy_agreed_at, created_at, updated_at",
-    )
-    .eq("id", claims.sub)
-    .single();
-
-  if (error || !data) return null;
-
-  return {
-    id: claims.sub,
-    email: typeof claims.email === "string" ? claims.email : data.email,
-    profile: data as Profile,
-  };
+  try {
+    const response = await executeUserQuery<ProfileResult>(
+      "GetCurrentProfile",
+      {
+        uid: session.uid,
+        email: session.email,
+        emailVerified: true,
+      },
+    );
+    if (!response.data.profile) return null;
+    const profile = mapProfile(response.data.profile);
+    return {
+      id: session.uid,
+      email: session.email ?? profile.email,
+      profile,
+    };
+  } catch {
+    return null;
+  }
 });
 
 export async function requireUser() {

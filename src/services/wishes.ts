@@ -1,42 +1,45 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireRole, requireUser } from "@/lib/auth/dal";
+import { executeUserQuery } from "@/lib/firebase/data-connect";
+import { mapWish, type DataRecord } from "@/lib/firebase/mappers";
 import type { Wish } from "@/types/domain";
 
-const wishColumns =
-  "id, owner_id, shop_name, contact_name, contact_email, industry, website_url, sns_url, address, problem, desired_outcome, experiment_idea, preferred_period, notes, status, created_at, updated_at";
-
 export async function getOwnerWishes(ownerId: string): Promise<Wish[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("wishes")
-    .select(wishColumns)
-    .eq("owner_id", ownerId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error("WISH一覧を取得できませんでした。");
-  return (data ?? []) as Wish[];
+  const user = await requireRole("shop_owner");
+  if (ownerId !== user.id) throw new Error("FORBIDDEN");
+  const response = await executeUserQuery<{ wishes: DataRecord[] }>(
+    "ListOwnerWishes",
+    { uid: user.id, email: user.email, emailVerified: true },
+  );
+  return response.data.wishes.map(mapWish);
 }
 
 export async function getWish(id: string): Promise<Wish | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("wishes")
-    .select(wishColumns)
-    .eq("id", id)
-    .maybeSingle();
+  const user = await requireUser();
+  const actor = { uid: user.id, email: user.email, emailVerified: true };
+  if (user.profile.role === "admin") {
+    const response = await executeUserQuery<{ wish: DataRecord | null }, { id: string }>(
+      "AdminGetWish",
+      actor,
+      { id },
+    );
+    return response.data.wish ? mapWish(response.data.wish) : null;
+  }
 
-  if (error) throw new Error("WISHを取得できませんでした。");
-  return data as Wish | null;
+  const response = await executeUserQuery<
+    { wishes: DataRecord[] },
+    { id: string }
+  >("GetOwnedWish", actor, { id });
+  const row = response.data.wishes[0];
+  return row ? mapWish(row) : null;
 }
 
 export async function getAllWishes(): Promise<Wish[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("wishes")
-    .select(wishColumns)
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error("WISH管理データを取得できませんでした。");
-  return (data ?? []) as Wish[];
+  const user = await requireRole("admin");
+  const response = await executeUserQuery<{ wishes: DataRecord[] }>(
+    "AdminListWishes",
+    { uid: user.id, email: user.email, emailVerified: true },
+  );
+  return response.data.wishes.map(mapWish);
 }
