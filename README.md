@@ -52,7 +52,7 @@ flowchart TD
 
 ## GitHub Pages（静的プレビュー）
 
-`main` に push すると `.github/workflows/deploy-pages.yml` が `https://<user>.github.io/<repo>/` へ静的サイトを公開します。
+`main` に push すると `.github/workflows/nextjs.yml` が `https://<user>.github.io/<repo>/` へ静的サイトを公開します。
 初回のみ GitHub の **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に変更してください。
 
 GitHub Pages はサーバーを持たないため、公開されるのは **SAMPLE データのプレビュー** です。
