@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { CalendarDays, Clock3, MapPin, Store, Users } from "lucide-react";
 import { ApplicationForm } from "@/components/forms/application-form";
 import { ButtonLink } from "@/components/ui/button";
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return challenge ? { title: challenge.title, description: challenge.summary } : { title: "Challengeが見つかりません" };
 }
 
-export default async function ChallengeDetailPage({ params }: Props) {
+async function ChallengeDetailContent({ params }: Props) {
   const { id } = await params;
   const [challenge, user] = await Promise.all([getPublishedChallenge(id), getUserContext()]);
   if (!challenge) notFound();
@@ -40,5 +41,13 @@ export default async function ChallengeDetailPage({ params }: Props) {
       </Container></section>
       <section id="apply" className="border-t border-line bg-white py-14 sm:py-20"><Container className="max-w-3xl"><p className="text-xs font-black tracking-[0.2em] text-student">APPLY</p><h2 className="mt-3 text-3xl font-black">このChallengeに応募する</h2><p className="mt-4 leading-8 text-muted">応募内容はまず運営が確認します。商店主へ個人情報が自動公開されることはありません。</p><div className="mt-8 rounded-3xl border border-line bg-background p-5 sm:p-8">{user?.profile.role === "student" ? <ApplicationForm challengeId={challenge.id} /> : user ? <p className="text-sm leading-7 text-muted">学生アカウントのみ応募できます。現在のアカウントではChallengeの閲覧のみ可能です。</p> : <div className="text-center"><p className="text-sm leading-7 text-muted">応募には学生アカウントでのログインが必要です。</p><div className="mt-5 flex justify-center gap-3"><ButtonLink href="/login" variant="outline">ログイン</ButtonLink><ButtonLink href="/register" variant="student">学生登録する</ButtonLink></div></div>}</div></Container></section>
     </>
+  );
+}
+
+export default function ChallengeDetailPage({ params }: Props) {
+  return (
+    <Suspense fallback={<div className="min-h-[60vh]" aria-label="読み込み中" />}>
+      <ChallengeDetailContent params={params} />
+    </Suspense>
   );
 }
