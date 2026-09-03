@@ -11,6 +11,10 @@ import { getPublishedChallenge } from "@/services/challenges";
 import { demoChallenges } from "@/data/demo-challenges";
 import { isFirebaseConfigured } from "@/lib/env";
 
+// Firebase の公開データとログイン状態をリクエストごとに取得する。
+// GitHub Pages の静的ビルド時だけ build-github-pages.mjs が一時的に除外する。
+export const dynamic = "force-dynamic";
+
 // 静的書き出し（GitHub Pages）時は SAMPLE データの詳細ページだけを生成する。
 export async function generateStaticParams() {
   if (isFirebaseConfigured()) return [];
