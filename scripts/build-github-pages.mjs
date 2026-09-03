@@ -11,6 +11,8 @@ import path from "node:path";
 const root = process.cwd();
 const stash = path.join(root, ".pages-stash");
 const incompatible = [
+  // Vercel の稼働確認用 API。GitHub Pages にはサーバーがないため除外する。
+  "src/app/api/health",
   // 認証必須の動的ページ。静的書き出しでは生成対象を持たないため除外する。
   "src/app/owner/wishes/[id]",
   "src/app/admin/wishes/[id]",
