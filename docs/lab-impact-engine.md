@@ -37,3 +37,6 @@ The delta is `after - before`. If baseline is strictly positive, the descriptive
 4. Conduct one real paired merchant experiment, recording baseline, intervention context, follow-up, bias and confounders.
 5. Consider control/comparison areas, repeated time-series and confidence intervals; do not make causal claims without a valid study design.
 6. Add deliberate correction/amendment flow with explicit revision lineage, not silent observation mutation.
+
+
+See `docs/lab-workflow-engine.md` for the separately staged experiment workflow and audit ledger.

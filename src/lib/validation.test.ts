@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema, createLabProjectSchema, createLabMetricSchema, recordLabObservationSchema } from "@/lib/validation";
+import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema, createLabProjectSchema, createLabMetricSchema, recordLabObservationSchema, transitionLabProjectSchema, createLabMilestoneSchema, transitionLabMilestoneSchema } from "@/lib/validation";
 
 describe("input validation", () => {
   it("accepts a valid shop-owner registration and rejects admin self-registration", () => {
@@ -59,6 +59,22 @@ describe("input validation", () => {
       { ...entry, evidenceUrl: "http://example.com" },
       { ...entry, phase: "estimate" },
     ]) expect(recordLabObservationSchema.safeParse(wrong).success).toBe(false);
+  });
+
+  it("rejects malformed workflow changes and assignees", () => {
+    const projectId = "11111111-1111-4111-8111-111111111111";
+    const milestoneId = "22222222-2222-4222-8222-222222222222";
+    const change = { projectId, expectedStatus:"active", nextStatus:"paused", note:"天候不良のため中断します。" };
+    expect(transitionLabProjectSchema.safeParse(change).success).toBe(true);
+    expect(transitionLabProjectSchema.safeParse({ ...change, note:"short" }).success).toBe(false);
+    expect(transitionLabProjectSchema.safeParse({ ...change, nextStatus:"published" }).success).toBe(false);
+    const milestone = { projectId, title:"お客様インタビュー実施", assigneeRole:"student", dueDate:"2026-11-05" };
+    expect(createLabMilestoneSchema.safeParse(milestone).success).toBe(true);
+    expect(createLabMilestoneSchema.safeParse({ ...milestone, assigneeRole:"anyone" }).success).toBe(false);
+    expect(createLabMilestoneSchema.safeParse({ ...milestone, dueDate:"2026-02-31" }).success).toBe(false);
+    const update = { projectId, milestoneId, expectedStatus:"todo", nextStatus:"doing", note:"聞き取りを開始しました。" };
+    expect(transitionLabMilestoneSchema.safeParse(update).success).toBe(true);
+    expect(transitionLabMilestoneSchema.safeParse({ ...update, milestoneId:"evil" }).success).toBe(false);
   });
 
   it("requires consent when creating an Application", () => {

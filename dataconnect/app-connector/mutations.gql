@@ -316,3 +316,113 @@ mutation RecordLabObservation(
     }
   )
 }
+
+# The server uses the same transition table. The connector independently rejects
+# invalid transitions and stale expected status within one atomic transaction.
+mutation TransitionLabProject(
+  $id: UUID!
+  $expectedStatus: String!
+  $nextStatus: String!
+  $note: String!
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && ((vars.expectedStatus == 'planning' && (vars.nextStatus == 'active' || vars.nextStatus == 'canceled')) || (vars.expectedStatus == 'active' && (vars.nextStatus == 'paused' || vars.nextStatus == 'canceled')) || (vars.expectedStatus == 'paused' && (vars.nextStatus == 'active' || vars.nextStatus == 'canceled')))")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin required")
+    }
+    labProject(id: $id) {
+      status @check(expr: "this == vars.expectedStatus", message: "Stale or invalid LAB status")
+    }
+  }
+  labProject_update(
+    id: $id
+    data: { status: $nextStatus, updatedAt_expr: "request.time" }
+  )
+  labEvent_insert(
+    data: {
+      projectId: $id
+      kind: "project_transition"
+      previousStatus: $expectedStatus
+      nextStatus: $nextStatus
+      note: $note
+      createdAt_expr: "request.time"
+    }
+  )
+}
+
+mutation CreateLabMilestone(
+  $id: UUID!
+  $projectId: UUID!
+  $title: String!
+  $assigneeRole: String!
+  $dueAt: Timestamp
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.assigneeRole == 'admin' || vars.assigneeRole == 'student' || vars.assigneeRole == 'shop_owner')")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin required")
+    }
+    labProject(id: $projectId) {
+      status @check(expr: "this == 'planning' || this == 'active'", message: "Project not editable")
+    }
+  }
+  labMilestone_insert(
+    data: {
+      id: $id
+      projectId: $projectId
+      title: $title
+      assigneeRole: $assigneeRole
+      dueAt: $dueAt
+      status: "todo"
+      createdAt_expr: "request.time"
+      updatedAt_expr: "request.time"
+    }
+  )
+  labEvent_insert(
+    data: {
+      projectId: $projectId
+      kind: "milestone_created"
+      subjectId: $id
+      nextStatus: "todo"
+      note: $title
+      createdAt_expr: "request.time"
+    }
+  )
+}
+
+mutation TransitionLabMilestone(
+  $id: UUID!
+  $projectId: UUID!
+  $expectedStatus: String!
+  $nextStatus: String!
+  $note: String!
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && ((vars.expectedStatus == 'todo' && vars.nextStatus == 'doing') || (vars.expectedStatus == 'doing' && (vars.nextStatus == 'blocked' || vars.nextStatus == 'done')) || (vars.expectedStatus == 'blocked' && vars.nextStatus == 'doing'))")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin required")
+    }
+    labProject(id: $projectId) {
+      status @check(expr: "this == 'active'", message: "Project must be active")
+    }
+    labMilestone(id: $id) {
+      projectId @check(expr: "this == vars.projectId", message: "Cross-project milestone denied")
+      status @check(expr: "this == vars.expectedStatus", message: "Stale or invalid milestone state")
+    }
+  }
+  labMilestone_update(
+    id: $id
+    data: { status: $nextStatus, updatedAt_expr: "request.time" }
+  )
+  labEvent_insert(
+    data: {
+      projectId: $projectId
+      kind: "milestone_transition"
+      subjectId: $id
+      previousStatus: $expectedStatus
+      nextStatus: $nextStatus
+      note: $note
+      createdAt_expr: "request.time"
+    }
+  )
+}

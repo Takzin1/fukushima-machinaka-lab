@@ -197,6 +197,12 @@ CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テ�
 - [ ] Mobile実機、キーボード操作、コントラストを確認
 - [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
 
+## Experiment Workflow Engine (staged on LAB Impact Engine)
+
+The private admin-only Lab Workflow extends project execution with explicit states `planning → active ↔ paused → completed/canceled` (full transition rules in `src/lib/lab/workflow-engine.ts`), milestones with assigned participant role and due dates, and append-only transition history. **Only the administrator** can change workflow state in this release; an assignee role is metadata, not authorization for students or shop owners to modify a project. Changes run through Firebase Data Connect transactions with expected-state checks to reject stale updates and server-side transition validation. Completion is **disabled at both server and Data Connect authorization levels** in this release: the prior server-only readiness check was vulnerable to time-of-check/time-of-use races. The helper still displays diagnostic readiness; completion must wait for an atomic database-level invariant and concurrent-write tests.
+
+LAB remains disabled by default (`LAB_EXECUTION_ENABLED=false`). The new SQL/connector operations are **not deployed**, and no real experiment records or authenticated staging tests have been performed. See `docs/lab-workflow-engine.md`.
+
 ## LAB impact measurement engine (stacked on LAB Phase 2)
 
 LAB operators can define typed KPIs per project and append pre/post observations through `/admin/labs/[id]`. Measurements include a unit, preferred direction, measurement method, period length, date, HTTPS evidence URL and context/confounder notes. The pure engine displays a **descriptive delta**, not causal impact; mismatched methods, windows or chronological order are not compared. Evidence URLs are operator-supplied and **not independently verified**. The new Data Connect schema is **private/admin-only**, and the existing `LAB_EXECUTION_ENABLED=false` gate keeps the feature off until the schema and connector are deployed and reviewed. See `docs/lab-impact-engine.md`.

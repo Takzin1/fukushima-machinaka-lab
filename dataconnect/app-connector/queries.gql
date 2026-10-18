@@ -286,3 +286,45 @@ query AdminGetLabEvidence($id: UUID!) @auth(level: USER_EMAIL_VERIFIED) {
     createdAt
   }
 }
+
+# A single admin-only snapshot supports workflow decisions and audit.
+query AdminGetLabWorkflow($id: UUID!) @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin required")
+  }
+  labProject(id: $id) {
+    id
+    status
+    goal
+    challenge { title }
+  }
+  labMilestones(
+    where: { projectId: { eq: $id } }
+    orderBy: [{ createdAt: ASC }]
+    limit: 100
+  ) {
+    id
+    projectId
+    title
+    assigneeRole
+    dueAt
+    status
+    createdAt
+    updatedAt
+  }
+  labEvents(
+    where: { projectId: { eq: $id } }
+    orderBy: [{ createdAt: DESC }]
+    limit: 300
+  ) {
+    id
+    projectId
+    actorId
+    kind
+    subjectId
+    previousStatus
+    nextStatus
+    note
+    createdAt
+  }
+}

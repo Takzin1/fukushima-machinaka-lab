@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
             "@/actions/admin": "./src/actions-static/admin.ts",
             "@/actions/labs": "./src/actions-static/labs.ts",
             "@/actions/lab-evidence": "./src/actions-static/lab-evidence.ts",
+            "@/actions/lab-workflow": "./src/actions-static/lab-workflow.ts",
           },
         },
       }

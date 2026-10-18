@@ -6,7 +6,8 @@ import { buttonClass } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/dal";
 import { compareLabMetrics } from "@/lib/lab/impact-engine";
 import { isLabExecutionEnabled } from "@/lib/lab/rollout";
-import { getAdminLabEvidence } from "@/services/labs";
+import { getAdminLabEvidence, getAdminLabWorkflow } from "@/services/labs";
+import { LabWorkflowPanel } from "@/components/lab/lab-workflow-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,8 @@ export default async function AdminLabDetail({ params }: { params: Promise<{ id:
   }
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
-  const data = await getAdminLabEvidence(id);
-  if (!data?.labProject) notFound();
+  const [data, workflow] = await Promise.all([getAdminLabEvidence(id), getAdminLabWorkflow(id)]);
+  if (!data?.labProject || !workflow?.labProject) notFound();
   const { labProject: project, labMetrics: metrics, labObservations: observations } = data;
   const comparisons = compareLabMetrics(metrics, observations);
   return <DashboardShell role="admin" eyebrow="LAB IMPACT ENGINE"
@@ -37,6 +38,7 @@ export default async function AdminLabDetail({ params }: { params: Promise<{ id:
           データ取得上限に達しました。表示した測定記録・比較結果は全件を網羅していない可能性があります。
         </p>
       )}
+      <LabWorkflowPanel projectId={id} workflow={workflow} />
       <section className="rounded-3xl border border-line bg-white p-6">
         <h2 className="text-xl font-black">1. 評価指標（KPI）を定義する</h2>
         <p className="mt-2 text-sm text-muted">例：来店人数／人／増加が望ましい。単位と測定方法を決めてから値を登録します。</p>
