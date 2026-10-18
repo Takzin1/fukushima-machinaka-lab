@@ -102,7 +102,7 @@ export const challengeSchema = z.object({
 
 // Coordinates used by the public map are entered and approved separately by admins.
 const coordinate = (min: number, max: number) =>
-  z.string().trim().min(1).pipe(z.coerce.number().finite().min(min).max(max));
+  z.string().trim().min(1).transform((value) => Number(value)).pipe(z.number().finite().min(min).max(max));
 
 export const mapLocationSchema = z.object({
   challengeId: z.string().uuid(),
