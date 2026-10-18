@@ -148,6 +148,38 @@ export const recordLabObservationSchema = z.object({
   contextNote: optionalText(1200),
 });
 
+const experimentNote = requiredText("理由・実施記録", 600, 10);
+const experimentStatus = z.enum(["planning", "active", "paused", "completed", "canceled"]);
+const milestoneStatus = z.enum(["todo", "doing", "blocked", "done"]);
+
+export const transitionLabProjectSchema = z.object({
+  projectId: z.string().uuid(),
+  expectedStatus: experimentStatus,
+  nextStatus: experimentStatus,
+  note: experimentNote,
+});
+
+export const createLabMilestoneSchema = z.object({
+  projectId: z.string().uuid(),
+  title: requiredText("マイルストーン名", 180, 5),
+  assigneeRole: z.enum(["admin", "student", "shop_owner"]),
+  dueDate: z.string().trim()
+    .refine((value) => {
+      if (value === "") return true;
+      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+      const [year, month, day] = value.split("-").map(Number);
+      return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
+    }, "有効な期限日を入力してください。"),
+});
+
+export const transitionLabMilestoneSchema = z.object({
+  projectId: z.string().uuid(),
+  milestoneId: z.string().uuid(),
+  expectedStatus: milestoneStatus,
+  nextStatus: milestoneStatus,
+  note: experimentNote,
+});
+
 export const createLabProjectSchema = z.object({
   applicationId: z.string().uuid(),
   goal: requiredText("実験目標", 300, 10),
