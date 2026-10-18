@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/auth/dal";
 import { executeUserMutation } from "@/lib/firebase/data-connect";
 import {
   applicationStatusSchema,
+  mapLocationSchema,
   challengeSchema,
   fieldErrors,
   formDataObject,
@@ -94,4 +95,29 @@ export async function updateChallengeStatusAction(formData: FormData) {
   revalidatePath("/admin/challenges");
   revalidatePath("/challenges");
   redirect("/admin/challenges?updated=1");
+}
+
+export async function updateChallengeMapLocationAction(formData: FormData) {
+  const user = await requireRole("admin");
+  const parsed = mapLocationSchema.safeParse(formDataObject(formData));
+  if (!parsed.success) redirect("/admin/challenges?error=invalid-map-location");
+  try {
+    await executeUserMutation(
+      "UpdateChallengeMapLocation",
+      { uid: user.id, email: user.email, emailVerified: true },
+      {
+        id: parsed.data.challengeId,
+        latitude: parsed.data.latitude,
+        longitude: parsed.data.longitude,
+        label: parsed.data.label,
+        precision: parsed.data.precision,
+        approved: parsed.data.approved === "on",
+      },
+    );
+  } catch {
+    redirect("/admin/challenges?error=map-save-failed");
+  }
+  revalidatePath("/admin/challenges");
+  revalidatePath("/map");
+  redirect("/admin/challenges?map-updated=1");
 }
