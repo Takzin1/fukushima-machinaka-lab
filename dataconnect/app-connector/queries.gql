@@ -216,3 +216,38 @@ query ListPublishedMapPins
     mapPrecision
   }
 }
+
+# Strict admin-only LAB views, no public project details.
+query AdminListLabProjects @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin required")
+  }
+  labProjects(orderBy: [{ createdAt: DESC }]) {
+    id
+    applicationId
+    challengeId
+    studentId
+    ownerId
+    goal
+    baselineNote
+    status
+    createdAt
+    challenge { title }
+    student { displayName }
+  }
+}
+
+query AdminGetMatchedApplicationForLab($id: UUID!) @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin required")
+  }
+  application(id: $id) {
+    id
+    status
+    challengeId
+    studentId
+    challenge {
+      wish { ownerId }
+    }
+  }
+}

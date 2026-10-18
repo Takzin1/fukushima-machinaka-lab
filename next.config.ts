@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
             "@/actions/wishes": "./src/actions-static/wishes.ts",
             "@/actions/applications": "./src/actions-static/applications.ts",
             "@/actions/admin": "./src/actions-static/admin.ts",
+            "@/actions/labs": "./src/actions-static/labs.ts",
           },
         },
       }
