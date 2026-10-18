@@ -14,3 +14,10 @@ test("student can browse a sample Challenge on mobile", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText("老舗喫茶店");
   await expect(page.getByText("個人情報が自動公開されることはありません")).toBeVisible();
 });
+
+test("public map is navigable without approved pins", async ({ page }) => {
+  await page.goto("/map");
+  await expect(page.getByRole("heading", { name: "福島の街で、何を試す？" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "国土地理院" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "地図を使わずChallenge一覧を見る" })).toBeVisible();
+});

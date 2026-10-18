@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicationSchema, challengeSchema, registerSchema, wishSchema } from "@/lib/validation";
+import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema } from "@/lib/validation";
 
 describe("input validation", () => {
   it("accepts a valid shop-owner registration and rejects admin self-registration", () => {
@@ -15,6 +15,14 @@ describe("input validation", () => {
 
   it("validates Challenge publish input", () => {
     expect(challengeSchema.safeParse({ wishId: "11111111-1111-4111-8111-111111111111", title: "老舗喫茶店に20代の新規顧客を呼べ。", summary: "店の魅力を再発見し、小さな集客実験を設計して実行します。", background: "長く地域に愛されてきた一方、若い世代との接点が減っています。", problem: "既存の魅力が若い世代へ十分に届かず、新しい顧客接点が不足しています。", desiredOutcome: "学生と店主が集客施策を一つ試せている状態。", shopDisplayName: "まちなか喫茶", category: "マーケティング", skills: "SNS、写真", period: "4週間", workload: "週2時間", area: "福島市", capacity: "3", deadline: "2026-10-31", status: "published" }).success).toBe(true);
+  });
+
+  it("requires valid reviewed map coordinates", () => {
+    const good = { challengeId: "11111111-1111-4111-8111-111111111111", latitude: "37.75", longitude: "140.46", label: "すずらん通り", precision: "area", approved: "on" };
+    expect(mapLocationSchema.safeParse(good).success).toBe(true);
+    expect(mapLocationSchema.safeParse({ ...good, latitude: "" }).success).toBe(false);
+    expect(mapLocationSchema.safeParse({ ...good, longitude: "181" }).success).toBe(false);
+    expect(mapLocationSchema.safeParse({ ...good, precision: "private" }).success).toBe(false);
   });
 
   it("requires consent when creating an Application", () => {

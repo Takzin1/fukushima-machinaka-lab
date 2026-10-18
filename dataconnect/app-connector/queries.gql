@@ -146,6 +146,11 @@ query AdminListChallenges @auth(level: USER_EMAIL_VERIFIED) {
   }
   challenges(orderBy: [{ createdAt: DESC }]) {
     ...ChallengeFields
+    mapLatitude
+    mapLongitude
+    mapLabel
+    mapPrecision
+    mapApproved
   }
 }
 
@@ -181,5 +186,33 @@ query AdminListApplications @auth(level: USER_EMAIL_VERIFIED) {
       grade
       skills
     }
+  }
+}
+
+# Public map is strictly opt-in: no WISH private fields or unapproved pins.
+query ListPublishedMapPins
+  @auth(level: PUBLIC, insecureReason: "Published, non-sample and explicitly map-approved Challenge locations only; no private WISH fields.") {
+  challenges(
+    where: {
+      _and: [
+        { status: { eq: "published" } }
+        { isSample: { eq: false } }
+        { mapApproved: { eq: true } }
+      ]
+    }
+    orderBy: [{ publishedAt: DESC }]
+    limit: 300
+  ) {
+    id
+    title
+    area
+    status
+    isSample
+    deadline
+    mapApproved
+    mapLatitude
+    mapLongitude
+    mapLabel
+    mapPrecision
   }
 }

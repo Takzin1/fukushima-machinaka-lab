@@ -100,6 +100,19 @@ export const challengeSchema = z.object({
   status: z.enum(["draft", "published"]),
 });
 
+// Coordinates used by the public map are entered and approved separately by admins.
+const coordinate = (min: number, max: number) =>
+  z.string().trim().min(1).transform((value) => Number(value)).pipe(z.number().finite().min(min).max(max));
+
+export const mapLocationSchema = z.object({
+  challengeId: z.string().uuid(),
+  latitude: coordinate(-90, 90),
+  longitude: coordinate(-180, 180),
+  label: requiredText("地図公開ラベル", 120, 2),
+  precision: z.enum(["area", "exact"]),
+  approved: z.enum(["on"]).optional(),
+});
+
 export const applicationStatusSchema = z.object({
   applicationId: z.string().uuid(),
   status: z.enum([

@@ -197,6 +197,21 @@ CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テ�
 - [ ] Mobile実機、キーボード操作、コントラストを確認
 - [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
 
+## Safe map rollout
+
+The map's real data connector is guarded by **`MAP_DATA_ENABLED=true`**, which defaults to off. Until the schema/connector has been migrated and verified, the public `/map` continues to show the GSI basemap and an honest preparation message; it never fetches an uninstalled query. The admin map edit form and mutation are also disabled. Invalid live queries return an unavailable status, never fabricated empty data. Set the environment variable only after deployment and verification. This gate allows merging UI code independently of database rollout.
+
+## Four-way map integration (new)
+
+- **GSI 地理院タイル:** Default raster basemap, attribution required, no API key.
+- **MapLibre GL JS:** Interactive client renderer loaded on `/map` from a pinned CDN version. Bundle this dependency before production hardening.
+- **Firebase Data Connect / Cloud SQL:** Approved map fields belong to `Challenge`; `ListPublishedMapPins` excludes samples, private WISH addresses, and unapproved locations.
+- **MapTiler:** Optional alternative basemap configured by `NEXT_PUBLIC_MAPTILER_KEY`. Restrict the public browser key to authorized production domains.
+
+A newly approved map point must be entered on `/admin/challenges` only after confirming the business owner's publication permission. The initial preview has no real map pins and never fabricates a location. The admin checkbox can revoke map publication independently of Challenge status.
+
+Deploy the Data Connect schema/connector migration (`npm run sql:compile && npm run sql:deploy`) and configure Firebase production credentials before real pins are available. See [ADR 0001](docs/adr/0001-map-provider.md) for privacy, providers, tradeoffs and release gates.
+
 ## Roadmap
 
 - Phase 2: LAB進捗管理
