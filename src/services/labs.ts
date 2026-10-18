@@ -26,3 +26,22 @@ export async function getAdminLabProjects(): Promise<AdminLabProject[]> {
   );
   return data.labProjects;
 }
+
+import type { LabMetric, LabObservation } from "@/lib/lab/impact-engine";
+
+export type LabEvidenceOverview = {
+  labProject: { id: string; challengeId: string; goal: string; status: string; challenge: { title: string } } | null;
+  labMetrics: LabMetric[];
+  labObservations: LabObservation[];
+};
+
+export async function getAdminLabEvidence(id: string): Promise<LabEvidenceOverview | null> {
+  const user = await requireRole("admin");
+  if (!isLabExecutionEnabled()) return null;
+  const { data } = await executeUserQuery<LabEvidenceOverview, { id: string }>(
+    "AdminGetLabEvidence",
+    { uid: user.id, email: user.email, emailVerified: true },
+    { id },
+  );
+  return data.labProject ? data : null;
+}

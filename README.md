@@ -197,6 +197,10 @@ CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テ�
 - [ ] Mobile実機、キーボード操作、コントラストを確認
 - [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
 
+## LAB impact measurement engine (stacked on LAB Phase 2)
+
+LAB operators can define typed KPIs per project and append pre/post observations through `/admin/labs/[id]`. Measurements include a unit, preferred direction, measurement method, period length, date, HTTPS evidence URL and context/confounder notes. The pure engine displays a **descriptive delta**, not causal impact; mismatched methods, windows or chronological order are not compared. Evidence URLs are operator-supplied and **not independently verified**. The new Data Connect schema is **private/admin-only**, and the existing `LAB_EXECUTION_ENABLED=false` gate keeps the feature off until the schema and connector are deployed and reviewed. See `docs/lab-impact-engine.md`.
+
 ## LAB execution Phase 2 (staged)
 
 - LAB is an **admin-only** matched-application handoff, with a dedicated `LabProject` Cloud SQL entity and a unique reference to each Application.

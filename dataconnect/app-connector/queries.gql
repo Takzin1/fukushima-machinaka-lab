@@ -251,3 +251,38 @@ query AdminGetMatchedApplicationForLab($id: UUID!) @auth(level: USER_EMAIL_VERIF
     }
   }
 }
+
+# Private project experiment records; only the operator may read them.
+query AdminGetLabEvidence($id: UUID!) @auth(level: USER_EMAIL_VERIFIED) {
+  profile(key: { id_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "Admin required")
+  }
+  labProject(id: $id) {
+    id
+    challengeId
+    goal
+    status
+    challenge { title }
+  }
+  labMetrics(where: { projectId: { eq: $id } }, orderBy: [{ createdAt: ASC }], limit: 100) {
+    id
+    projectId
+    name
+    unit
+    direction
+    createdAt
+  }
+  labObservations(where: { projectId: { eq: $id } }, orderBy: [{ measuredAt: DESC }], limit: 500) {
+    id
+    projectId
+    metricId
+    phase
+    value
+    windowDays
+    methodNote
+    evidenceUrl
+    contextNote
+    measuredAt
+    createdAt
+  }
+}

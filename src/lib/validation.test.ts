@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema, createLabProjectSchema } from "@/lib/validation";
+import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema, createLabProjectSchema, createLabMetricSchema, recordLabObservationSchema } from "@/lib/validation";
 
 describe("input validation", () => {
   it("accepts a valid shop-owner registration and rejects admin self-registration", () => {
@@ -34,6 +34,31 @@ describe("input validation", () => {
     expect(createLabProjectSchema.safeParse(good).success).toBe(true);
     expect(createLabProjectSchema.safeParse({ ...good, goal: "短い" }).success).toBe(false);
     expect(createLabProjectSchema.safeParse({ ...good, applicationId: "fake" }).success).toBe(false);
+  });
+
+  it("validates LAB KPI definitions and numeric observation data", () => {
+    const metric = {
+      projectId: "11111111-1111-4111-8111-111111111111",
+      name: "日別来店人数", unit: "人", direction: "higher",
+    };
+    expect(createLabMetricSchema.safeParse(metric).success).toBe(true);
+    expect(createLabMetricSchema.safeParse({ ...metric, direction: "maximize_money" }).success).toBe(false);
+    const entry = {
+      ...{ projectId: metric.projectId },
+      metricId: "22222222-2222-4222-8222-222222222222",
+      phase: "baseline", value: "104", windowDays: "7",
+      methodNote: "POS週次集計", measuredDate: "2026-10-18",
+      evidenceUrl: "https://example.com/receipt", contextNote: "雨の日あり",
+    };
+    expect(recordLabObservationSchema.safeParse(entry).success).toBe(true);
+    for (const wrong of [
+      { ...entry, value: "" }, { ...entry, value: "NaN" },
+      { ...entry, windowDays: "0" }, { ...entry, windowDays: "7.5" },
+      { ...entry, measuredDate: "2026-02-31" },
+      { ...entry, evidenceUrl: "javascript:alert(1)" },
+      { ...entry, evidenceUrl: "http://example.com" },
+      { ...entry, phase: "estimate" },
+    ]) expect(recordLabObservationSchema.safeParse(wrong).success).toBe(false);
   });
 
   it("requires consent when creating an Application", () => {

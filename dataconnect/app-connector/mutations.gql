@@ -249,3 +249,70 @@ mutation CreateLabProject(
     }
   )
 }
+
+# The metric's project is verified and the project must be operational.
+mutation CreateLabMetric(
+  $projectId: UUID!
+  $name: String!
+  $unit: String!
+  $direction: String!
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.direction == 'higher' || vars.direction == 'lower')")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin required")
+    }
+    labProject(id: $projectId) {
+      status @check(expr: "this == 'planning' || this == 'active'", message: "LAB is not editable")
+    }
+  }
+  labMetric_insert(
+    data: {
+      projectId: $projectId
+      name: $name
+      unit: $unit
+      direction: $direction
+      createdAt_expr: "request.time"
+    }
+  )
+}
+
+# All measurements remain append-only; admins cannot silently replace baseline history.
+mutation RecordLabObservation(
+  $projectId: UUID!
+  $metricId: UUID!
+  $phase: String!
+  $value: Float!
+  $windowDays: Int!
+  $methodNote: String!
+  $evidenceUrl: String
+  $contextNote: String
+  $measuredAt: Timestamp!
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.phase == 'baseline' || vars.phase == 'after') && vars.windowDays >= 1 && vars.windowDays <= 366")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin required")
+    }
+    labProject(id: $projectId) {
+      status @check(expr: "this == 'planning' || this == 'active'", message: "LAB is not editable")
+    }
+    labMetric(id: $metricId) {
+      projectId @check(expr: "this == vars.projectId", message: "Metric does not belong to LAB")
+    }
+  }
+  labObservation_insert(
+    data: {
+      projectId: $projectId
+      metricId: $metricId
+      phase: $phase
+      value: $value
+      windowDays: $windowDays
+      methodNote: $methodNote
+      evidenceUrl: $evidenceUrl
+      contextNote: $contextNote
+      measuredAt: $measuredAt
+      createdAt_expr: "request.time"
+    }
+  )
+}
