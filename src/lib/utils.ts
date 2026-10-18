@@ -12,6 +12,7 @@ export function formatDate(value: string | null | undefined) {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "Asia/Tokyo",
   }).format(new Date(value));
 }
 

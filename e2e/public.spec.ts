@@ -21,3 +21,9 @@ test("public map is navigable without approved pins", async ({ page }) => {
   await expect(page.getByRole("button", { name: "国土地理院" })).toBeVisible();
   await expect(page.getByRole("link", { name: "地図を使わずChallenge一覧を見る" })).toBeVisible();
 });
+
+test("sample challenge shows a clear non-application status", async ({ page }) => {
+  await page.goto("/challenges/11111111-1111-4111-8111-111111111111");
+  await expect(page.getByText("これはデモ用Challengeです。実際の応募はできません。")).toBeVisible();
+  await expect(page.getByRole("button", { name: "このChallengeに応募する" })).toHaveCount(0);
+});

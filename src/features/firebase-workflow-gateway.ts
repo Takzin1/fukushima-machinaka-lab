@@ -7,6 +7,7 @@ import {
   type FirebaseActor,
 } from "@/lib/firebase/data-connect";
 import type { DataRecord } from "@/lib/firebase/mappers";
+import { getRecruitmentState } from "@/lib/recruitment";
 
 function insertedId(value: DataRecord | null | undefined, code: string) {
   const id = value?.id;
@@ -51,11 +52,12 @@ export function createFirebaseWorkflowGateway(
         { id: string }
       >("GetPublishedChallenge", { id: challengeId });
       const challenge = response.data.challenges[0];
-      if (!challenge) return false;
-      return (
-        challenge.deadline == null ||
-        new Date(String(challenge.deadline)).getTime() >= Date.now()
-      );
+      if (!challenge || challenge.isSample !== false || challenge.status !== "published") return false;
+      const deadline =
+        challenge.deadline === null ? null
+        : typeof challenge.deadline === "string" ? challenge.deadline
+        : "invalid";
+      return getRecruitmentState({ status: "published", is_sample: false, deadline }) === "open";
     },
 
     async createApplication(_studentId, input) {

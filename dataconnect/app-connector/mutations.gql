@@ -128,6 +128,7 @@ mutation CreateApplication(
     }
     challenge(id: $challengeId) {
       status @check(expr: "this == 'published'", message: "Challenge is not open")
+      isSample @check(expr: "this == false", message: "Sample challenges cannot accept applications")
       deadline @check(expr: "this == null || this >= request.time", message: "Challenge deadline has passed")
     }
   }
