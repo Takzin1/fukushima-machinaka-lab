@@ -403,7 +403,7 @@ mutation TransitionLabMilestone(
       role @check(expr: "this == 'admin'", message: "Admin required")
     }
     labProject(id: $projectId) {
-      status @check(expr: "this == 'planning' || this == 'active'", message: "Project not editable")
+      status @check(expr: "this == 'active'", message: "Project must be active")
     }
     labMilestone(id: $id) {
       projectId @check(expr: "this == vars.projectId", message: "Cross-project milestone denied")
