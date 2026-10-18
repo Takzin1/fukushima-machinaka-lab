@@ -5,6 +5,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonClass } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/dal";
 import { compareLabMetrics } from "@/lib/lab/impact-engine";
+import { inspectLabIntegrity } from "@/lib/lab/integrity-engine";
+import { LabIntegrityPanel } from "@/components/lab/lab-integrity-panel";
 import { isLabExecutionEnabled } from "@/lib/lab/rollout";
 import { getAdminLabEvidence, getAdminLabWorkflow } from "@/services/labs";
 import { LabWorkflowPanel } from "@/components/lab/lab-workflow-panel";
@@ -25,6 +27,11 @@ export default async function AdminLabDetail({ params }: { params: Promise<{ id:
   if (!data?.labProject || !workflow?.labProject) notFound();
   const { labProject: project, labMetrics: metrics, labObservations: observations } = data;
   const comparisons = compareLabMetrics(metrics, observations);
+  const integrity = inspectLabIntegrity({
+    projectId: id, status: workflow.labProject.status,
+    milestones: workflow.labMilestones, events: workflow.labEvents,
+    metrics, observations,
+  });
   return <DashboardShell role="admin" eyebrow="LAB IMPACT ENGINE"
     title={project.challenge.title}
     description="実験前後の測定記録を保存し、比較可能性と根拠の不足を検査します。差分は因果効果の推定ではありません。">
@@ -38,6 +45,7 @@ export default async function AdminLabDetail({ params }: { params: Promise<{ id:
           データ取得上限に達しました。表示した測定記録・比較結果は全件を網羅していない可能性があります。
         </p>
       )}
+      <LabIntegrityPanel report={integrity} />
       <LabWorkflowPanel projectId={id} workflow={workflow} />
       <section className="rounded-3xl border border-line bg-white p-6">
         <h2 className="text-xl font-black">1. 評価指標（KPI）を定義する</h2>
