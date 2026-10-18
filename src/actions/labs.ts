@@ -22,7 +22,7 @@ export async function createLabProjectAction(formData: FormData): Promise<void> 
   if (!parsed.success) redirect("/admin/labs?error=invalid-input");
 
   const actor = { uid: user.id, email: user.email, emailVerified: true };
-  const { data } = await executeUserQuery<{ application: MatchedApplication | null }>(
+  const { data } = await executeUserQuery<{ application: MatchedApplication | null }, { id: string }>(
     "AdminGetMatchedApplicationForLab",
     actor,
     { id: parsed.data.applicationId },
