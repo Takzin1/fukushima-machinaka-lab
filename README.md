@@ -197,6 +197,10 @@ CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テ�
 - [ ] Mobile実機、キーボード操作、コントラストを確認
 - [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
 
+## LAB Database Integrity Engine (manual staging gate)
+
+Admin-only diagnostics flag corrupt milestone, metric, observation and audit data, duplicates, foreign references and truncated query windows. They never authorize completion. A PostgreSQL parent-row locking and append-only trigger design lives at `db/staging/001_lab_integrity_guards.sql` for manual **staging** evaluation only; it has not been applied to Cloud SQL. See `docs/lab-database-integrity.md`. `LAB_RELEASE_APPROVED=false` is unchanged.
+
 ## Experiment Workflow Engine (staged on LAB Impact Engine)
 
 The private admin-only Lab Workflow extends project execution with explicit states `planning → active ↔ paused → completed/canceled` (full transition rules in `src/lib/lab/workflow-engine.ts`), milestones with assigned participant role and due dates, and append-only transition history. **Only the administrator** can change workflow state in this release; an assignee role is metadata, not authorization for students or shop owners to modify a project. Changes run through Firebase Data Connect transactions with expected-state checks to reject stale updates and server-side transition validation. Completion is **disabled at both server and Data Connect authorization levels** in this release: the prior server-only readiness check was vulnerable to time-of-check/time-of-use races. The helper still displays diagnostic readiness; completion must wait for an atomic database-level invariant and concurrent-write tests.

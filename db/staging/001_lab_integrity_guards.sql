@@ -12,7 +12,8 @@ BEGIN
   IF to_regclass('public.lab_project') IS NULL OR
      to_regclass('public.lab_milestone') IS NULL OR
      to_regclass('public.lab_event') IS NULL OR
-     to_regclass('public.lab_observation') IS NULL THEN
+     to_regclass('public.lab_observation') IS NULL OR
+     to_regclass('public.lab_metric') IS NULL THEN
     RAISE EXCEPTION 'LAB tables not found: deploy and verify Data Connect schema in staging first';
   END IF;
 END
@@ -148,7 +149,7 @@ BEGIN
 
   IF NEW.phase NOT IN ('baseline', 'after') OR
      NEW.window_days NOT BETWEEN 1 AND 366 OR
-     NOT isfinite(NEW.value) OR
+     NEW.value::text IN ('NaN', 'Infinity', '-Infinity') OR
      btrim(NEW.method_note) = '' THEN
     RAISE EXCEPTION 'Invalid LAB observation fields';
   END IF;
