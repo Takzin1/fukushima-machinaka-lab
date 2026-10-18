@@ -14,6 +14,7 @@ export async function SiteHeader() {
         <nav className="hidden items-center gap-7 text-sm font-bold text-[#4c5a5e] md:flex" aria-label="主要ナビゲーション">
           <Link href="/about" className="hover:text-foreground">LABとは</Link>
           <Link href="/challenges" className="hover:text-foreground">Challenge</Link>
+          <Link href="/map" className="hover:text-foreground">まちなかMap</Link>
         </nav>
         <UserNav />
       </Container>
