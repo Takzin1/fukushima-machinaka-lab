@@ -135,3 +135,32 @@ type LabObservation
   measuredAt: Timestamp!
   createdAt: Timestamp! @default(expr: "request.time")
 }
+
+# Private, administrator-owned experiment execution records.
+type LabMilestone
+  @table
+  @index(fields: ["projectId", "createdAt"], order: [ASC, ASC]) {
+  projectId: UUID! @index
+  project: LabProject! @ref(fields: ["projectId"], references: ["id"])
+  title: String!
+  assigneeRole: String!
+  dueAt: Timestamp
+  status: String! @default(value: "todo")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}
+
+# Append-only audit records for project transitions and milestone mutations.
+type LabEvent
+  @table
+  @index(fields: ["projectId", "createdAt"], order: [ASC, DESC]) {
+  projectId: UUID! @index
+  project: LabProject! @ref(fields: ["projectId"], references: ["id"])
+  actorId: String! @default(expr: "auth.uid")
+  kind: String!
+  subjectId: UUID
+  previousStatus: String
+  nextStatus: String
+  note: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
