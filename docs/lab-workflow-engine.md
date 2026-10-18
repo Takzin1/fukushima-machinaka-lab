@@ -8,7 +8,7 @@ Connect the LAB handoff (#7) and KPI observations (#8) to an accountable executi
 
 Project:
 - `planning → active` or `canceled`
-- `active → paused`, `completed`, or `canceled`
+- `active → paused` or `canceled` (completion currently **locked** pending atomic DB invariant)
 - `paused → active` or `canceled`
 - `completed` and `canceled` are final; no editing or reopening.
 
@@ -18,7 +18,7 @@ Milestone:
 - `blocked → doing`
 - `done` is final. Progress transitions require project status `active`.
 
-A project can be completed only when a full, known milestone snapshot exists, at least one milestone is present, and all are marked `done`. A full 100-item result conservatively prevents completion because the query may be truncated.
+**Safety hardening:** an otherwise-valid project may **not** transition to `completed` in v0: the server state machine, action and connector's `@auth` all fail closed. The readiness helper reports a *diagnostic snapshot only*; it cannot authorize completion. A DB-side atomic milestone check is required before adding the `active → completed` transition in a subsequent release.
 
 ## Data and permissions
 
@@ -34,7 +34,7 @@ A project can be completed only when a full, known milestone snapshot exists, at
 
 ## Critical limitation before production
 
-The **server-side** completion gate checks the current milestone list and then sends a separate status update mutation. The database currently does **not** enforce “all milestones done” inside the same atomic transaction as completion; a concurrently added/changed milestone could theoretically race with the gate. Before production rollout, add an atomic database-level completion invariant or equivalent locked transaction and perform concurrency tests. Do not claim this completion rule is fully race-safe.
+The previous implementation used a **server-side** readiness check before sending a separate status update. This created a time-of-check/time-of-use race with concurrent milestone additions or updates. This hardening **disables all `completed` transitions** in the server state machine, server action, and Data Connect authorization expression until a DB-atomic, concurrency-tested invariant is available. `getCompletionReadiness` remains informational only. No one should enable completion by only changing frontend buttons or form validators.
 
 ## Further work
 

@@ -10,7 +10,9 @@ export type LabAssigneeRole = "admin" | "student" | "shop_owner";
 
 const projectTransitions: Record<LabProjectStatus, readonly LabProjectStatus[]> = {
   planning: ["active", "canceled"],
-  active: ["paused", "completed", "canceled"],
+  // Completion is fail-closed until the DB verifies all milestones in the
+  // same serialized transaction. A server-side readiness snapshot is insufficient.
+  active: ["paused", "canceled"],
   paused: ["active", "canceled"],
   completed: [],
   canceled: [],

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/dal";
 import { executeUserMutation } from "@/lib/firebase/data-connect";
 import {
-  canTransitionProject, canTransitionMilestone, getCompletionReadiness,
+  canTransitionProject, canTransitionMilestone,
   isMilestoneStatus, isProjectStatus,
 } from "@/lib/lab/workflow-engine";
 import { isLabExecutionEnabled } from "@/lib/lab/rollout";
@@ -32,13 +32,10 @@ export async function transitionLabProjectAction(formData: FormData): Promise<vo
       !canTransitionProject(current, input.nextStatus)) {
     redirect(detail(input.projectId, "error=stale-transition"));
   }
+  // Explicitly fail closed even if the UI or state table is modified later.
+  // Completion needs an atomic DB invariant, not a pre-transaction snapshot.
   if (input.nextStatus === "completed") {
-    if (workflow.labMilestones.length >= 100) {
-      redirect(detail(input.projectId, "error=milestone-limit"));
-    }
-    if (!getCompletionReadiness(workflow.labMilestones).ready) {
-      redirect(detail(input.projectId, "error=incomplete-milestones"));
-    }
+    redirect(detail(input.projectId, "error=completion-locked"));
   }
   try {
     await executeUserMutation("TransitionLabProject",

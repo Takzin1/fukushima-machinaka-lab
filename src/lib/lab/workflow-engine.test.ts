@@ -8,7 +8,8 @@ import {
 describe("experiment workflow state machine", () => {
   it("only allows explicitly approved project edges", () => {
     expect(projectNextStates("planning")).toEqual(["active", "canceled"]);
-    expect(canTransitionProject("active", "completed")).toBe(true);
+    // Completion cannot be enabled by client/server-only checks.
+    expect(canTransitionProject("active", "completed")).toBe(false);
     expect(canTransitionProject("active", "paused")).toBe(true);
     expect(canTransitionProject("paused", "active")).toBe(true);
     expect(canTransitionProject("paused", "completed")).toBe(false);

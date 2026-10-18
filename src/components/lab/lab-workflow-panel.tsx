@@ -31,17 +31,21 @@ export function LabWorkflowPanel({
     <div className="rounded-3xl border border-line bg-white p-6">
       <h2 className="text-xl font-black">EXPERIMENT · 実験進行管理</h2>
       <p className="mt-2 text-sm text-muted">現状：<strong>{projectLabels[status]}</strong>。変更時は必ず理由を記録し、以前の状態とともに履歴へ残します。</p>
-      {!readiness.ready && <p className="mt-3 rounded-xl bg-[#fff8e7] p-3 text-xs">
-        完了には全マイルストーンの終了が必要です：
-        {readiness.reason === "no_milestones" ? "まずマイルストーンを登録してください。" : `未完了が${readiness.pending}件あります。`}
-      </p>}
+      <p role="status" className="mt-3 rounded-xl bg-[#fff8e7] p-3 text-xs">
+        LABの「完了」操作は、DB側の同時更新対策が検証されるまで無効です。
+        {readiness.reason === "no_milestones"
+          ? " マイルストーンが未登録です。"
+          : readiness.reason === "unfinished"
+            ? ` 現時点で未完了のマイルストーンが${readiness.pending}件あります。`
+            : " マイルストーンの完了記録は揃っています。"}
+      </p>
       {transitions.length > 0 && <form action={transitionLabProjectAction} className="mt-4 grid gap-3 sm:grid-cols-2">
         <input type="hidden" name="projectId" value={projectId} />
         <input type="hidden" name="expectedStatus" value={status} />
         <label className="grid gap-1 text-sm">次の進行状態
           <select name="nextStatus" required defaultValue="">
             <option value="" disabled>遷移先を選択</option>
-            {transitions.filter((s) => s !== "completed" || readiness.ready).map((s) => (
+            {transitions.map((s) => (
               <option key={s} value={s}>{projectLabels[s]}</option>
             ))}
           </select>

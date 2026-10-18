@@ -324,7 +324,7 @@ mutation TransitionLabProject(
   $expectedStatus: String!
   $nextStatus: String!
   $note: String!
-) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && ((vars.expectedStatus == 'planning' && (vars.nextStatus == 'active' || vars.nextStatus == 'canceled')) || (vars.expectedStatus == 'active' && (vars.nextStatus == 'paused' || vars.nextStatus == 'completed' || vars.nextStatus == 'canceled')) || (vars.expectedStatus == 'paused' && (vars.nextStatus == 'active' || vars.nextStatus == 'canceled')))")
+) @auth(expr: "auth.uid != '' && auth.token.email_verified == true && ((vars.expectedStatus == 'planning' && (vars.nextStatus == 'active' || vars.nextStatus == 'canceled')) || (vars.expectedStatus == 'active' && (vars.nextStatus == 'paused' || vars.nextStatus == 'canceled')) || (vars.expectedStatus == 'paused' && (vars.nextStatus == 'active' || vars.nextStatus == 'canceled')))")
   @transaction {
   query @redact {
     profile(key: { id_expr: "auth.uid" }) {
