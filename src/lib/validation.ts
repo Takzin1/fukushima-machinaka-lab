@@ -113,6 +113,12 @@ export const mapLocationSchema = z.object({
   approved: z.enum(["on"]).optional(),
 });
 
+export const createLabProjectSchema = z.object({
+  applicationId: z.string().uuid(),
+  goal: requiredText("実験目標", 300, 10),
+  baselineNote: optionalText(1200),
+});
+
 export const applicationStatusSchema = z.object({
   applicationId: z.string().uuid(),
   status: z.enum([

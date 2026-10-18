@@ -7,7 +7,7 @@ import { Container } from "@/components/ui/container";
 const nav = {
   shop_owner: [{ href: "/owner", label: "WISH一覧" }, { href: "/owner/wishes/new", label: "新しいWISH" }],
   student: [{ href: "/student", label: "学生ホーム" }, { href: "/student/applications", label: "応募履歴" }, { href: "/challenges", label: "Challengeを探す" }],
-  admin: [{ href: "/admin", label: "管理ホーム" }, { href: "/admin/wishes", label: "WISH" }, { href: "/admin/challenges", label: "Challenge" }, { href: "/admin/applications", label: "応募" }],
+  admin: [{ href: "/admin", label: "管理ホーム" }, { href: "/admin/wishes", label: "WISH" }, { href: "/admin/challenges", label: "Challenge" }, { href: "/admin/applications", label: "応募" }, { href: "/admin/labs", label: "LAB進捗" }],
 };
 
 export function DashboardShell({ role, eyebrow, title, description, children, actions }: { role: UserRole; eyebrow: string; title: string; description?: string; children: ReactNode; actions?: ReactNode }) {

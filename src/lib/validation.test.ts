@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema } from "@/lib/validation";
+import { applicationSchema, challengeSchema, registerSchema, wishSchema, mapLocationSchema, createLabProjectSchema } from "@/lib/validation";
 
 describe("input validation", () => {
   it("accepts a valid shop-owner registration and rejects admin self-registration", () => {
@@ -23,6 +23,17 @@ describe("input validation", () => {
     expect(mapLocationSchema.safeParse({ ...good, latitude: "" }).success).toBe(false);
     expect(mapLocationSchema.safeParse({ ...good, longitude: "181" }).success).toBe(false);
     expect(mapLocationSchema.safeParse({ ...good, precision: "private" }).success).toBe(false);
+  });
+
+  it("validates LAB creation input and cannot be made from empty goals", () => {
+    const good = {
+      applicationId: "11111111-1111-4111-8111-111111111111",
+      goal: "4週間で店舗の新規来店の変化を測定する",
+      baselineNote: "",
+    };
+    expect(createLabProjectSchema.safeParse(good).success).toBe(true);
+    expect(createLabProjectSchema.safeParse({ ...good, goal: "短い" }).success).toBe(false);
+    expect(createLabProjectSchema.safeParse({ ...good, applicationId: "fake" }).success).toBe(false);
   });
 
   it("requires consent when creating an Application", () => {

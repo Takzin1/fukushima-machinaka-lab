@@ -86,3 +86,22 @@ type Application
   createdAt: Timestamp! @default(expr: "request.time")
   updatedAt: Timestamp! @default(expr: "request.time")
 }
+
+# Private project handoff after a verified match; never a public map/API resource.
+type LabProject
+  @table
+  @index(fields: ["status", "createdAt"], order: [ASC, DESC]) {
+  applicationId: UUID! @unique
+  application: Application! @ref(fields: ["applicationId"], references: ["id"])
+  challengeId: UUID! @index
+  challenge: Challenge! @ref(fields: ["challengeId"], references: ["id"])
+  studentId: String! @index
+  student: Profile! @ref(fields: ["studentId"], references: ["id"])
+  ownerId: String! @index
+  owner: Profile! @ref(fields: ["ownerId"], references: ["id"])
+  goal: String!
+  baselineNote: String
+  status: String! @default(value: "planning")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}

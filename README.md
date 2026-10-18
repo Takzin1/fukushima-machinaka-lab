@@ -197,6 +197,15 @@ CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テ�
 - [ ] Mobile実機、キーボード操作、コントラストを確認
 - [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
 
+## LAB execution Phase 2 (staged)
+
+- LAB is an **admin-only** matched-application handoff, with a dedicated `LabProject` Cloud SQL entity and a unique reference to each Application.
+- Admin may create a LAB only for a `matched` Application whose student, challenge, and shop owner IDs are verified by the Data Connect transaction.
+- Pilot feature remains **OFF** by default (`LAB_EXECUTION_ENABLED=false`). Do not enable until schema migration and authenticated live role-denial checks have passed.
+- `/admin/labs` provides the starting interface. No public or student/shop-owner LAB query is published in this stage.
+- The baseline note documents what was measured before the experiment; recording measurements, evidence and progress changes come in the next iteration.
+- See `docs/lab-execution-phase2.md`.
+
 ## Recruitment safety
 
 Challenge cards distinguish open, expired, closed and SAMPLE. Date-only sample deadlines are interpreted as inclusive until the end of the day in JST; production timestamps are compared as exact UTC instants. The detail page hides the application form when the Challenge is not open. The workflow gateway rejects SAMPLE and expired deadlines, while Data Connect CreateApplication independently enforces publication state, deadline and SAMPLE exclusion in one transaction. Public SAMPLE data is demonstration only, never a real application.

@@ -209,3 +209,43 @@ mutation UpdateChallengeMapLocation(
     }
   )
 }
+
+# The connector independently verifies matching and all participant IDs.
+# A unique Application FK ensures one LAB project per matched application.
+mutation CreateLabProject(
+  $applicationId: UUID!
+  $challengeId: UUID!
+  $studentId: String!
+  $ownerId: String!
+  $goal: String!
+  $baselineNote: String
+) @auth(level: USER_EMAIL_VERIFIED) @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin required")
+    }
+    application(id: $applicationId) {
+      status @check(expr: "this == 'matched'", message: "A matched application is required")
+      challengeId @check(expr: "this == vars.challengeId", message: "Challenge mismatch")
+      studentId @check(expr: "this == vars.studentId", message: "Student mismatch")
+      challenge {
+        wish {
+          ownerId @check(expr: "this == vars.ownerId", message: "Shop owner mismatch")
+        }
+      }
+    }
+  }
+  labProject_insert(
+    data: {
+      applicationId: $applicationId
+      challengeId: $challengeId
+      studentId: $studentId
+      ownerId: $ownerId
+      goal: $goal
+      baselineNote: $baselineNote
+      status: "planning"
+      createdAt_expr: "request.time"
+      updatedAt_expr: "request.time"
+    }
+  )
+}
