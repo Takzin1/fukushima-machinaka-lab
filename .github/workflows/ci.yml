@@ -29,3 +29,5 @@ jobs:
           trap 'mv .firebaserc.ci .firebaserc' EXIT
           npm run sql:compile
       - run: npm run build
+      - name: Verify GitHub Pages static map preview
+        run: GITHUB_PAGES_BASE_PATH=/fukushima-machinaka-lab npm run build:pages
