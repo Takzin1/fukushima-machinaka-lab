@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { ChallengeMap } from "@/components/map/challenge-map";
-import { getPublicMapPins } from "@/services/map-locations";
+import { getPublicMapState } from "@/services/map-locations";
 
 export const metadata: Metadata = {
   title: "まちなかMap",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PublicMapPage() {
-  const pins = await getPublicMapPins();
+  const mapState = await getPublicMapState();
   const mapTilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY?.trim();
   return (
     <>
@@ -26,7 +26,7 @@ export default async function PublicMapPage() {
       </section>
       <section className="py-10 sm:py-14">
         <Container>
-          <ChallengeMap pins={pins} mapTilerKey={mapTilerKey} />
+          <ChallengeMap pins={mapState.pins} status={mapState.status} mapTilerKey={mapTilerKey} />
           <p className="mt-8 text-sm text-muted"><Link href="/challenges" className="font-bold text-student underline">地図を使わずChallenge一覧を見る</Link></p>
         </Container>
       </section>

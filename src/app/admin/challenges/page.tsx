@@ -6,13 +6,16 @@ import { buttonClass } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/dal";
 import { formatDate } from "@/lib/utils";
 import { getAllChallenges } from "@/services/challenges";
+import { isPublicMapDataEnabled } from "@/lib/map/rollout";
 
 export default async function AdminChallengesPage() {
   await requireRole("admin");
   const challenges = await getAllChallenges();
+  const mapDataReady = isPublicMapDataEnabled();
   return (
     <DashboardShell role="admin" eyebrow="CHALLENGE MANAGEMENT" title="Challenge管理"
       description="Challengeの公開と地図への位置情報公開は、別々に承認・管理します。">
+      {!mapDataReady && <p className="rounded-xl border border-line bg-white p-4 text-sm">地図登録はCloud SQLのスキーマ更新と接続確認後に有効になります。</p>}
       {challenges.length ? (
         <div className="grid gap-4">
           {challenges.map((challenge) => (
@@ -38,7 +41,7 @@ export default async function AdminChallengesPage() {
                   <button className={buttonClass("admin", "min-h-11 rounded-xl px-4")}>更新</button>
                 </form>
               </div>
-              <details className="mt-5 border-t border-line pt-4">
+              {mapDataReady && <details className="mt-5 border-t border-line pt-4">
                 <summary className="cursor-pointer text-sm font-bold text-student">地図掲載設定（管理者のみ）</summary>
                 <p className="mt-3 text-xs leading-6 text-muted">
                   非公開のWISH住所は自動取得しません。店舗の承諾と位置の確認を済ませた場合にだけ公開してください。
@@ -71,7 +74,7 @@ export default async function AdminChallengesPage() {
                   </label>
                   <button className={buttonClass("admin", "min-h-11 rounded-xl sm:col-span-2")}>地図設定を保存</button>
                 </form>
-              </details>
+              </details>}
             </article>
           ))}
         </div>

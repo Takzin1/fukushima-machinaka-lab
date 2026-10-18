@@ -4,12 +4,17 @@ import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import type { PublicMapPin } from "@/lib/map/pins";
+import type { PublicMapRolloutStatus } from "@/lib/map/rollout";
 import { getMapStyle, mapTilerEnabled, MAPLIBRE_SCRIPT_URL, MAPLIBRE_STYLE_URL, type MapProvider } from "@/lib/map/provider";
 
 type MapInstance = { remove: () => void };
 type MarkerInstance = {
   setLngLat: (position: [number, number]) => MarkerInstance;
   addTo: (map: MapInstance) => MarkerInstance;
+  setPopup: (popup: PopupInstance) => MarkerInstance;
+};
+type PopupInstance = {
+  setText: (text: string) => PopupInstance;
 };
 type MapLibreGlobal = {
   Map: new (options: {
@@ -20,10 +25,15 @@ type MapLibreGlobal = {
     attributionControl: boolean;
   }) => MapInstance;
   Marker: new (options?: { color?: string }) => MarkerInstance;
+  Popup: new (options?: { offset?: number }) => PopupInstance;
 };
 declare global { interface Window { maplibregl?: MapLibreGlobal } }
 
-export function ChallengeMap({ pins, mapTilerKey }: { pins: PublicMapPin[]; mapTilerKey?: string }) {
+export function ChallengeMap({ pins, mapTilerKey, status }: {
+  pins: PublicMapPin[];
+  mapTilerKey?: string;
+  status: PublicMapRolloutStatus;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [provider, setProvider] = useState<MapProvider>("gsi");
@@ -45,7 +55,10 @@ export function ChallengeMap({ pins, mapTilerKey }: { pins: PublicMapPin[]; mapT
       });
       for (const pin of pins) {
         new lib.Marker({ color: pin.precision === "exact" ? "#2563eb" : "#e96b2c" })
-          .setLngLat([pin.longitude, pin.latitude]).addTo(map);
+          .setLngLat([pin.longitude, pin.latitude])
+          // setText never evaluates markup from operators or participants.
+          .setPopup(new lib.Popup({ offset: 22 }).setText(pin.title + "・" + pin.label))
+          .addTo(map);
       }
     } catch {
       queueMicrotask(() => setError("地図を表示できませんでした。下の一覧からChallengeを確認してください。"));
@@ -70,6 +83,8 @@ export function ChallengeMap({ pins, mapTilerKey }: { pins: PublicMapPin[]; mapT
       {!loaded && !error && <p className="text-sm text-muted">地図を読み込み中です。</p>}
       {error && <p role="status" className="rounded-xl bg-[#fff8e7] px-4 py-3 text-sm">{error}</p>}
       <p className="text-xs leading-6 text-muted">地図の掲載位置は管理者が確認・公開承認したものだけです。橙色はエリア概略、青色は公開承認済みの正確な地点です。</p>
+      {status === "disabled" && <p role="status" className="rounded-xl border border-line bg-white p-4 text-sm">地図の実データ連携は準備中です。公開許可を得た地点の登録後に表示します。</p>}
+      {status === "unavailable" && <p role="alert" className="rounded-xl border border-line bg-white p-4 text-sm">地図掲載情報を取得できませんでした。Challenge一覧から確認してください。</p>}
       <div aria-label="地図掲載Challenge一覧">
         <h2 className="text-xl font-black">地図掲載中のChallenge（{pins.length}件）</h2>
         {pins.length ? (

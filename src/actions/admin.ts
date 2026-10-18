@@ -15,6 +15,7 @@ import {
   formDataObject,
 } from "@/lib/validation";
 import type { FormState } from "@/types/domain";
+import { isPublicMapDataEnabled } from "@/lib/map/rollout";
 
 export async function createChallengeAction(
   _previousState: FormState,
@@ -99,6 +100,7 @@ export async function updateChallengeStatusAction(formData: FormData) {
 
 export async function updateChallengeMapLocationAction(formData: FormData) {
   const user = await requireRole("admin");
+  if (!isPublicMapDataEnabled()) redirect("/admin/challenges?error=map-disabled");
   const parsed = mapLocationSchema.safeParse(formDataObject(formData));
   if (!parsed.success) redirect("/admin/challenges?error=invalid-map-location");
   try {
