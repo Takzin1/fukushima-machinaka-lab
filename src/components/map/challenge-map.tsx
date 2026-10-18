@@ -48,7 +48,7 @@ export function ChallengeMap({ pins, mapTilerKey }: { pins: PublicMapPin[]; mapT
           .setLngLat([pin.longitude, pin.latitude]).addTo(map);
       }
     } catch {
-      setError("地図を表示できませんでした。下の一覧からChallengeを確認してください。");
+      queueMicrotask(() => setError("地図を表示できませんでした。下の一覧からChallengeを確認してください。"));
     }
     return () => map?.remove();
   }, [loaded, provider, mapTilerKey, pins]);
