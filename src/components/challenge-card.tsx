@@ -2,13 +2,15 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarDays, MapPin, Users } from "lucide-react";
 import type { Challenge } from "@/types/domain";
 import { formatDate } from "@/lib/utils";
+import { getRecruitmentState, recruitmentLabel } from "@/lib/recruitment";
 
 export function ChallengeCard({ challenge }: { challenge: Challenge }) {
+  const recruitment = getRecruitmentState(challenge);
   return (
     <article className="group relative flex h-full flex-col rounded-3xl border border-line bg-white p-5 shadow-[0_12px_40px_rgb(30_42_46/6%)] transition hover:-translate-y-1 hover:border-[#c8d1cf] hover:shadow-[0_18px_48px_rgb(30_42_46/10%)] sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <span className="rounded-full bg-student-soft px-3 py-1 text-xs font-bold text-student">{challenge.category}</span>
-        {challenge.is_sample ? <span className="rounded-full border border-[#e3c08a] bg-[#fff8e7] px-2.5 py-1 text-[10px] font-black tracking-wide text-[#91611c]">SAMPLE</span> : null}
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black tracking-wide ${recruitment === "open" ? "border-[#9bcdb5] bg-[#effaf3] text-[#22613a]" : "border-[#e3c08a] bg-[#fff8e7] text-[#91611c]"}`}>{recruitmentLabel(recruitment)}</span>
       </div>
       <h2 className="balance mt-5 text-xl font-black leading-8 tracking-tight"><Link href={`/challenges/${challenge.id}`} className="after:absolute after:inset-0">{challenge.title}</Link></h2>
       <p className="mt-3 line-clamp-3 text-sm leading-7 text-muted">{challenge.summary}</p>

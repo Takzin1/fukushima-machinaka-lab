@@ -197,6 +197,10 @@ CIは秘密情報を使わないSAMPLEモードでlint、型検査、単体テ�
 - [ ] Mobile実機、キーボード操作、コントラストを確認
 - [ ] SQL Connect／Cloud SQLの利用量、エラー、無料トライアル期限を監視
 
+## Recruitment safety
+
+Challenge cards distinguish open, expired, closed and SAMPLE. Date-only sample deadlines are interpreted as inclusive until the end of the day in JST; production timestamps are compared as exact UTC instants. The detail page hides the application form when the Challenge is not open. The workflow gateway rejects SAMPLE and expired deadlines, while Data Connect CreateApplication independently enforces publication state, deadline and SAMPLE exclusion in one transaction. Public SAMPLE data is demonstration only, never a real application.
+
 ## Safe map rollout
 
 The map's real data connector is guarded by **`MAP_DATA_ENABLED=true`**, which defaults to off. Until the schema/connector has been migrated and verified, the public `/map` continues to show the GSI basemap and an honest preparation message; it never fetches an uninstalled query. The admin map edit form and mutation are also disabled. Invalid live queries return an unavailable status, never fabricated empty data. Set the environment variable only after deployment and verification. This gate allows merging UI code independently of database rollout.
