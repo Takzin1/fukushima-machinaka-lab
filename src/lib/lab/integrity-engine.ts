@@ -4,11 +4,7 @@
  * authorization to complete a project or a substitute for staging tests.
  */
 import type { LabMetric, LabObservation } from "@/lib/lab/impact-engine";
-import {
-  isMilestoneStatus, isProjectStatus,
-  type LabProjectStatus,
-  type LabMilestoneStatus,
-} from "@/lib/lab/workflow-engine";
+import { isMilestoneStatus, isProjectStatus } from "@/lib/lab/workflow-engine";
 
 export type IntegritySeverity = "error" | "warning";
 export type IntegrityIssue = {
