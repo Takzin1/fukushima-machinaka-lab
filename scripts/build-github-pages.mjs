@@ -15,6 +15,7 @@ const incompatible = [
   // 認証必須の動的ページ。静的書き出しでは生成対象を持たないため除外する。
   "src/app/owner/wishes/[id]",
   "src/app/admin/wishes/[id]",
+  "src/app/admin/labs/[id]",
 ];
 const dynamicChallengePage = path.join(root, "src/app/challenges/[id]/page.tsx");
 const forceDynamicConfig = 'export const dynamic = "force-dynamic";\n';

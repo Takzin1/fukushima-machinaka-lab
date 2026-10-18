@@ -113,6 +113,41 @@ export const mapLocationSchema = z.object({
   approved: z.enum(["on"]).optional(),
 });
 
+const numericValue = z.string().trim().min(1)
+  .transform((value) => Number(value))
+  .pipe(z.number().finite().min(-1_000_000_000).max(1_000_000_000));
+
+const observationDate = z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/, "観測日を指定してください。")
+  .refine((value) => {
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
+  }, "有効な観測日を指定してください。");
+
+const optionalEvidenceUrl = z.string().trim().max(500)
+  .refine((value) => value === "" || (URL.canParse(value) && new URL(value).protocol === "https:"),
+    "HTTPSの根拠URLを指定してください。")
+  .transform((value) => value || null);
+
+export const createLabMetricSchema = z.object({
+  projectId: z.string().uuid(),
+  name: requiredText("KPI名", 120, 3),
+  unit: requiredText("単位", 20, 1),
+  direction: z.enum(["higher", "lower"]),
+});
+
+export const recordLabObservationSchema = z.object({
+  projectId: z.string().uuid(),
+  metricId: z.string().uuid(),
+  phase: z.enum(["baseline", "after"]),
+  value: numericValue,
+  windowDays: z.string().trim().min(1).transform((value) => Number(value))
+    .pipe(z.number().int().min(1).max(366)),
+  methodNote: requiredText("測定方法", 240, 5),
+  measuredDate: observationDate,
+  evidenceUrl: optionalEvidenceUrl,
+  contextNote: optionalText(1200),
+});
+
 export const createLabProjectSchema = z.object({
   applicationId: z.string().uuid(),
   goal: requiredText("実験目標", 300, 10),
