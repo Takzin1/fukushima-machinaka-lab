@@ -105,3 +105,33 @@ type LabProject
   createdAt: Timestamp! @default(expr: "request.time")
   updatedAt: Timestamp! @default(expr: "request.time")
 }
+
+# Admin-only, first-party metrics. No public data, no implicit publication.
+type LabMetric
+  @table
+  @unique(fields: ["projectId", "name"]) {
+  projectId: UUID! @index
+  project: LabProject! @ref(fields: ["projectId"], references: ["id"])
+  name: String!
+  unit: String!
+  direction: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Append-only measurements for auditable descriptive comparisons.
+type LabObservation
+  @table
+  @index(fields: ["projectId", "measuredAt"], order: [ASC, DESC]) {
+  projectId: UUID! @index
+  project: LabProject! @ref(fields: ["projectId"], references: ["id"])
+  metricId: UUID! @index
+  metric: LabMetric! @ref(fields: ["metricId"], references: ["id"])
+  phase: String!
+  value: Float!
+  windowDays: Int!
+  methodNote: String!
+  evidenceUrl: String
+  contextNote: String
+  measuredAt: Timestamp!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
