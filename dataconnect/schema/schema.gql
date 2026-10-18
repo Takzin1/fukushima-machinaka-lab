@@ -55,6 +55,13 @@ type Challenge
   deadline: Timestamp
   status: String! @default(value: "draft")
   isSample: Boolean! @default(value: false)
+  # Only administrators may approve a separately reviewed public location.
+  # Private WISH.address must NEVER be copied here automatically.
+  mapLatitude: Float
+  mapLongitude: Float
+  mapLabel: String
+  mapPrecision: String
+  mapApproved: Boolean! @default(value: false)
   publishedAt: Timestamp
   createdAt: Timestamp! @default(expr: "request.time")
   updatedAt: Timestamp! @default(expr: "request.time")

@@ -70,6 +70,11 @@ export type Challenge = {
   deadline: string | null;
   status: ChallengeStatus;
   is_sample: boolean;
+  map_latitude: number | null;
+  map_longitude: number | null;
+  map_label: string | null;
+  map_precision: "exact" | "area" | null;
+  map_approved: boolean;
   published_at: string | null;
   created_at: string;
   updated_at: string;

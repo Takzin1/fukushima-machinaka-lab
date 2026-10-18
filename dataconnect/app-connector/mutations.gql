@@ -179,3 +179,32 @@ mutation UpdateChallengeStatus($id: UUID!, $status: String!, $publishedAt: Times
     }
   )
 }
+
+# Admin-only publication boundary. Approval is a deliberate separate action.
+mutation UpdateChallengeMapLocation(
+  $id: UUID!
+  $latitude: Float!
+  $longitude: Float!
+  $label: String!
+  $precision: String!
+  $approved: Boolean!
+)
+  @auth(expr: "auth.uid != '' && auth.token.email_verified == true && (vars.precision == 'exact' || vars.precision == 'area')")
+  @transaction {
+  query @redact {
+    profile(key: { id_expr: "auth.uid" }) {
+      role @check(expr: "this == 'admin'", message: "Admin role required")
+    }
+  }
+  challenge_update(
+    id: $id
+    data: {
+      mapLatitude: $latitude
+      mapLongitude: $longitude
+      mapLabel: $label
+      mapPrecision: $precision
+      mapApproved: $approved
+      updatedAt_expr: "request.time"
+    }
+  )
+}
