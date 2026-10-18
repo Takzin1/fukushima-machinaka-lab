@@ -1,4 +1,5 @@
 import { createLabProjectAction } from "@/actions/labs";
+import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { requireRole } from "@/lib/auth/dal";
 import { isLabExecutionEnabled } from "@/lib/lab/rollout";
@@ -56,6 +57,7 @@ export default async function AdminLabsPage() {
             <article key={item.id} className="rounded-2xl border border-line bg-white p-5">
               <p className="text-xs font-bold text-student">{item.status} · {item.challenge.title}</p>
               <h3 className="mt-2 font-black">{item.goal}</h3>
+              <Link href={`/admin/labs/${item.id}`} className="mt-3 inline-block text-sm font-bold text-student underline">KPI・測定記録を管理する →</Link>
               <p className="mt-2 text-sm text-muted">参加学生：{item.student.displayName}</p>
               {item.baselineNote && <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{item.baselineNote}</p>}
             </article>

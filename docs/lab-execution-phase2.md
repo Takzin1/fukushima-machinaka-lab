@@ -15,7 +15,7 @@ Project begins in `planning`. The experiment goal and pre-experiment baseline ar
 ## Follow-on work
 - Stage transitions / accountable owner with audit trail.
 - Milestones, task assignment, completion evidence and attachments.
-- KPI measurement units, baseline/observed dates, confounders and evidence provenance.
+- KPI measurement units, baseline/observed dates, confounders and evidence provenance (initial backend and admin interface implemented in the stacked Impact Engine PR; independent provenance validation and causal research remain pending).
 - Consent and record-retention notices; privacy-by-default outcome publishing.
 - Student/shop-owner scoped views and explicit agreement workflow.
 

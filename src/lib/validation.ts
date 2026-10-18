@@ -117,7 +117,7 @@ const numericValue = z.string().trim().min(1)
   .transform((value) => Number(value))
   .pipe(z.number().finite().min(-1_000_000_000).max(1_000_000_000));
 
-const observationDate = z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/, "観測日を指定してください。")
+const observationDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "観測日を指定してください。")
   .refine((value) => {
     const [year, month, day] = value.split("-").map(Number);
     return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
